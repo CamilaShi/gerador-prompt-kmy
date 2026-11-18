@@ -230,6 +230,9 @@ h2{color:var(--ink);font-size:clamp(26px,3.6vw,34px);line-height:1.12}
 
 .sec{display:flex;gap:12px;align-items:center;padding:2px 0 6px;position:relative}
 .sec[hidden]{display:none}
+.flow{margin-bottom:12px;display:flex;justify-content:center;background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px 10px;overflow-x:auto}
+.flow svg{max-width:100%;height:auto}
+.flow+.actions,.flow+.meta+.actions{margin-top:12px}
 .howto{margin:0;padding:0 0 0 22px;display:flex;flex-direction:column;gap:8px;color:var(--ink);font-size:15px;line-height:1.5}
 .sec:not(:first-child){margin-top:14px}
 .sec-n{flex:none;width:36px;height:36px;border-radius:10px;background:var(--tint);color:var(--accent);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:600;font-size:14px}
@@ -516,6 +519,7 @@ function buildPrompt(a){
   if(fl.length){P('- Passos (com responsável):');fl.slice(0,12).forEach(function(x,i){P('  '+(i+1)+'. '+x+(has(a['resp__'+i])?' — responsável: '+val(a,'resp__'+i):''))});if(fl.length>12)fl.slice(12).forEach(function(x,i){P('  '+(13+i)+'. '+x)})}
   P('- Status ou situações para monitorar: '+(a.fluxo_status_usa==='sim'?'sim, cada item tem uma situação que pode ser acompanhada':a.fluxo_status_usa==='nao'?'não é necessário':'(não informado)'));
   P('- Aprovação: '+(a.aprov==='sim'?'sim. '+val(a,'aprov_quem'):a.aprov==='nao'?'não existe':'(não informado)'));
+  var fm=flowMermaid(a);if(fm.length){P('- Fluxograma do caminho principal (Mermaid). Confira se bate com o seu entendimento:');P('```mermaid');fm.forEach(function(x){P(x)});P('```')}
   P('- Histórico de alterações: '+(a.fluxo_hist==='sim'?'sim, guardar quem mudou o quê e quando':a.fluxo_hist==='nao'?'não é necessário':'(não informado)'));
   P('');
 
@@ -728,8 +732,79 @@ var STEPS=[
   A('obs','Observações finais',{opt:1,rows:4,ph:'Inclua qualquer detalhe que não apareceu nas perguntas anteriores.'}),
   {type:'sec',id:'sec_e2',num:'2',title:'Revise antes de gerar',desc:'Confira o que eu entendi. Os pontos em aberto não impedem de gerar.'},
   D('review',function(a){return reviewHTML(a)},function(a){return JSON.stringify(a)},{cls:'review-wrap'})
+ ]},
+ {k:'Conferir o desenho',h1:'Confira ',h2:'o fluxo do sistema',title:'Fluxograma',why:'Veja o caminho desenhado antes de gerar o prompt.',blocks:[
+  {type:'sec',id:'sec_f9',num:'1',title:'O caminho que você descreveu',desc:'Se algo estiver errado ou faltando, corrija os passos e volte aqui.'},
+  D('flowdraw',flowHTML,function(a){return JSON.stringify([a.fluxo_passos,a.aprov,a.fluxo_status_usa,Object.keys(a).filter(function(k){return k.indexOf('resp__')===0}).map(function(k){return a[k]})])})
  ]}
 ];
+
+
+/* ---------- fluxograma ---------- */
+function flowModel(a){
+  var st=lines(a.fluxo_passos).slice(0,12).map(function(t,i){return {t:t,r:has(a['resp__'+i])?val(a,'resp__'+i):''}});
+  var dec=-1;
+  if(a.aprov==='sim'&&st.length){
+    st.forEach(function(x,i){if(dec<0&&/aprov|autoriz|valid|confer/.test(norm(x.t)))dec=i});
+    if(dec<0)dec=Math.max(0,st.length-2);
+    if(dec>=st.length-1&&st.length>1)dec=st.length-2;
+  }
+  return {st:st,dec:dec};
+}
+function wrapTxt(t,n,max){
+  var w=String(t).split(/\s+/),ls=[],cur='';
+  w.forEach(function(x){if((cur+' '+x).trim().length>n&&cur){ls.push(cur);cur=x}else cur=(cur+' '+x).trim()});
+  if(cur)ls.push(cur);
+  if(ls.length>max){ls=ls.slice(0,max);ls[max-1]=short(ls[max-1]+'…',n)}
+  return ls;
+}
+function flowSVG(a){
+  var m=flowModel(a);if(!m.st.length)return '';
+  var W=450,cx=190,bw=340,gap=34,y=14,o=[],pos=[];
+  function arrow(y1,y2){o.push('<line x1="'+cx+'" y1="'+y1+'" x2="'+cx+'" y2="'+(y2-1)+'" stroke="#8394B3" stroke-width="1.6" marker-end="url(#ar)"/>')}
+  function pill(txt){o.push('<rect x="'+(cx-55)+'" y="'+y+'" width="110" height="34" rx="17" fill="#013D8F"/><text x="'+cx+'" y="'+(y+22)+'" text-anchor="middle" fill="#fff" font-size="14" font-weight="600">'+esc(txt)+'</text>');var c=y;y+=34;return c}
+  pill('Início');
+  var prevBottom=y;
+  m.st.forEach(function(x,i){
+    arrow(prevBottom,y+gap);y+=gap;
+    var tl=wrapTxt((i+1)+'. '+x.t,36,2),h=18+tl.length*18+(x.r?18:0);
+    o.push('<rect x="'+(cx-bw/2)+'" y="'+y+'" width="'+bw+'" height="'+h+'" rx="12" fill="#F1F5FB" stroke="#8394B3" stroke-width="1.4"/>');
+    tl.forEach(function(l,k){o.push('<text x="'+cx+'" y="'+(y+24+k*18)+'" text-anchor="middle" fill="#0B1F44" font-size="14" font-weight="600">'+esc(l)+'</text>')});
+    if(x.r)o.push('<text x="'+cx+'" y="'+(y+24+tl.length*18)+'" text-anchor="middle" fill="#4A5A78" font-size="12.5">Responsável: '+esc(short(x.r,34))+'</text>');
+    pos[i]={top:y,mid:y+h/2,bot:y+h};
+    prevBottom=y+h;y+=h;
+    if(i===m.dec){
+      arrow(prevBottom,y+gap);y+=gap;var dh=76,dw=180;
+      o.push('<polygon points="'+cx+','+y+' '+(cx+dw/2)+','+(y+dh/2)+' '+cx+','+(y+dh)+' '+(cx-dw/2)+','+(y+dh/2)+'" fill="#fff" stroke="#013D8F" stroke-width="1.6"/><text x="'+cx+'" y="'+(y+dh/2+5)+'" text-anchor="middle" fill="#0B1F44" font-size="14" font-weight="600">Aprovado?</text>');
+      var dm=y+dh/2,rx=cx+dw/2;
+      o.push('<path d="M'+rx+' '+dm+' H'+(cx+bw/2+28)+' V'+pos[i].mid+' H'+(cx+bw/2+2)+'" fill="none" stroke="#8394B3" stroke-width="1.6" marker-end="url(#ar)"/><text x="'+(rx+8)+'" y="'+(dm-6)+'" fill="#4A5A78" font-size="12.5" font-weight="600">Não</text>');
+      pos[i].dec=y;prevBottom=y+dh;y+=dh;
+      if(i<m.st.length-1)o.push('<text x="'+(cx+8)+'" y="'+(y+gap/2+4)+'" fill="#4A5A78" font-size="12.5" font-weight="600">Sim</text>');
+    }
+  });
+  arrow(prevBottom,y+gap);y+=gap;pill('Fim');
+  var H=y+14;
+  return '<svg xmlns="http://www.w3.org/2000/svg" id="flowSvg" viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'" role="img" aria-label="Fluxograma do sistema" font-family="Poppins,Figtree,Arial,sans-serif"><defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#8394B3"/></marker></defs>'+o.join('')+'</svg>';
+}
+function flowMermaid(a){
+  var m=flowModel(a);if(!m.st.length)return [];
+  var q=function(t){return String(t).replace(/["\[\]{}()<>]/g,"'")};
+  var o=['flowchart TD','  S([Início]) --> P1'];
+  m.st.forEach(function(x,i){
+    o.push('  P'+(i+1)+'["'+q((i+1)+'. '+x.t+(x.r?' ('+x.r+')':''))+'"]');
+    var nxt=(i<m.st.length-1)?'P'+(i+2):'F';
+    if(i===m.dec){o.push('  P'+(i+1)+' --> D{Aprovado?}');o.push('  D -->|Sim| '+nxt);o.push('  D -->|Não| P'+(i+1))}
+    else o.push('  P'+(i+1)+' --> '+nxt);
+  });
+  o.push('  F([Fim])');
+  return o;
+}
+function flowHTML(a){
+  var svg=flowSVG(a);
+  if(!svg)return '<div class="alert"><p>Ainda não há passos para desenhar. Volte e escreva o passo a passo do sistema.</p><button type="button" class="btn btn-ghost sm" data-act="goto" data-s="1">Ir para os passos</button></div>';
+  var note=a.fluxo_status_usa==='sim'?'<p class="meta">Cada item vai ter uma situação (status) acompanhada ao longo do caminho.</p>':'';
+  return '<div class="flow">'+svg+'</div>'+note+'<div class="actions"><button type="button" class="btn btn-ghost" data-act="goto" data-s="1">Corrigir os passos</button><button type="button" class="btn btn-ghost" data-act="flow-png">Baixar imagem</button></div>';
+}
 
 function reviewHTML(a){
   var g=gaps(a);
@@ -892,6 +967,15 @@ document.addEventListener('click',function(e){
     a.href=u;a.download=(has(S.a.nome)?slug(S.a.nome):'sistema')+'-prompt.txt';
     document.body.appendChild(a);a.click();a.remove();
     setTimeout(function(){URL.revokeObjectURL(u)},1000);toast('Arquivo baixado.');
+  }
+  else if(act==='flow-png'){
+    var sv=$('#flowSvg');if(sv){
+      var xml=new XMLSerializer().serializeToString(sv);var img=new Image();
+      var w=sv.viewBox.baseVal.width,h=sv.viewBox.baseVal.height;
+      img.onload=function(){var c=document.createElement('canvas');c.width=w*2;c.height=h*2;var x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(img,0,0,c.width,c.height);
+        c.toBlob(function(bl){var u=URL.createObjectURL(bl);var l=document.createElement('a');l.href=u;l.download=(has(S.a.nome)?slug(S.a.nome):'sistema')+'-fluxograma.png';document.body.appendChild(l);l.click();l.remove();setTimeout(function(){URL.revokeObjectURL(u)},1000);toast('Imagem baixada.')})};
+      img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(xml);
+    }
   }
   else if(act==='sug-perm'){var pm=[];roles(S.a).forEach(function(r){permSug(r).forEach(function(c){pm.push(r+'|'+c)})});setField('perm',pm);renderStage()}
   else if(act==='sug-telas'){setField('telas',uniq(L(S.a,'telas').concat(sugTelas(S.a))));renderStage()}
