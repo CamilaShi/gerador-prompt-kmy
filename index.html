@@ -733,7 +733,7 @@ var STEPS=[
   {type:'sec',id:'sec_e2',num:'2',title:'Revise antes de gerar',desc:'Confira o que eu entendi. Os pontos em aberto não impedem de gerar.'},
   D('review',function(a){return reviewHTML(a)},function(a){return JSON.stringify(a)},{cls:'review-wrap'})
  ]},
- {k:'Conferir o desenho',h1:'Confira ',h2:'o fluxo do sistema',title:'Fluxograma',why:'Veja o caminho desenhado antes de gerar o prompt.',blocks:[
+ {k:'Conferir o desenho',h1:'Confira ',h2:'o fluxo do sistema',title:'Fluxograma',why:'Visualize o caminho antes de seguir.',blocks:[
   {type:'sec',id:'sec_f9',num:'1',title:'O caminho que você descreveu',desc:'Se algo estiver errado ou faltando, corrija os passos e volte aqui.'},
   D('flowdraw',flowHTML,function(a){return JSON.stringify([a.fluxo_passos,a.aprov,a.fluxo_status_usa,Object.keys(a).filter(function(k){return k.indexOf('resp__')===0}).map(function(k){return a[k]})])})
  ]}
