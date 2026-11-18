@@ -417,7 +417,6 @@ function gaps(a){
   if(!has(a.ideia)) add(0,'Você ainda não descreveu a ideia.');
   if(!has(a.problema)) add(0,'Falta dizer o que vai funcionar melhor com o sistema.');
   if(!has(a.hoje_como)) add(0,'Falta contar se esse processo existe hoje e como é feito.');
-  if(!has(a.res_muda)) add(1,'Falta dizer o que muda quando o sistema funcionar.');
   if(!/\d/.test(a.med_hoje||'')) add(1,'O indicador de hoje está sem número.');
   if(!/\d/.test(a.med_meta||'')) add(1,'A meta está sem número. De quanto para quanto?');
   var ls=lines(a.fluxo_passos);
@@ -478,9 +477,8 @@ function buildPrompt(a){
   P('');
 
   P('## 3. RESULTADO ESPERADO E MEDIÇÃO');
-  kv('O que muda quando funcionar',a.res_muda);
-  kv('Indicador de resultado',a.med_ind);
-  if(has(a.med_hoje)||has(a.med_meta)) P('- De quanto para quanto: hoje '+(val(a,'med_hoje')||'?')+', meta '+(val(a,'med_meta')||'?'));
+  kv('O que será acompanhado',a.med_ind);
+  if(has(a.med_hoje)||has(a.med_meta)) P('- Resultado hoje: '+(val(a,'med_hoje')||'?')+'. Resultado esperado (meta, onde quer chegar): '+(val(a,'med_meta')||'?'));
   P('');
 
   P('## 4. FLUXO DESEJADO');
@@ -609,11 +607,10 @@ var STEPS=[
   T('aprov_quem','Quem aprova e o que acontece se recusar?',{show:function(a){return a.aprov==='sim'}}),
   R('fluxo_hist','Você quer guardar o histórico de quem mudou o quê e quando?',[['sim','Sim'],['nao','Não']]),
  ]},
- {k:'Do resultado ao número',h1:'Defina como saber que ',h2:'melhorou',title:'Resultado e medição',why:'Sem o número de partida, ninguém sabe se melhorou.',blocks:[
-  A('res_muda','O que muda quando isso funcionar?'),
-  T('med_ind','O que você vai medir para saber se melhorou?',{ph:'Ex.: tempo para concluir um pedido'}),
-  T('med_hoje','Como está hoje, com número?',{ph:'Ex.: 45 minutos',nudge:function(a){return has(a.med_hoje)&&!/\d/.test(a.med_hoje)?'De quanto para quanto? Coloque um número, mesmo que seja uma estimativa.':''}}),
-  T('med_meta','Qual é a meta?',{ph:'Ex.: 15 minutos',nudge:function(a){return has(a.med_meta)&&!/\d/.test(a.med_meta)?'De quanto para quanto? Coloque um número, mesmo que seja uma estimativa.':''}})
+ {k:'Do resultado ao número',h1:'Defina como saber se ',h2:'está funcionando',title:'Resultado e medição',why:'Compare onde você está hoje com onde quer chegar.',blocks:[
+  T('med_ind','O que você vai acompanhar para saber se está funcionando?',{ph:'Ex.: tempo para concluir um pedido'}),
+  T('med_hoje','Qual é o resultado hoje?',{ph:'Ex.: 45 minutos por pedido',nudge:function(a){return has(a.med_hoje)&&!/\d/.test(a.med_hoje)?'De quanto para quanto? Coloque um número, mesmo que seja uma estimativa.':''}}),
+  T('med_meta','Qual é o resultado esperado (meta)? Onde você quer chegar com esse sistema?',{ph:'Ex.: 15 minutos por pedido',nudge:function(a){return has(a.med_meta)&&!/\d/.test(a.med_meta)?'De quanto para quanto? Coloque um número, mesmo que seja uma estimativa.':''}})
  ]},
  {k:'Quem usa e o que vê',h1:'Defina quem ',h2:'usa e o que cada um acessa',title:'Usuários e acessos',why:'Cada pessoa vê o que precisa, e só isso.',blocks:[
   {type:'select',id:'usu_qtd',label:'Quantas pessoas vão usar?',options:QTD},
