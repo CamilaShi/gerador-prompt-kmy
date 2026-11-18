@@ -494,6 +494,7 @@ function buildPrompt(a){
   P('## 3. RESULTADO ESPERADO E MEDIÇÃO');
   kv('O que será acompanhado',a.med_ind);
   if(has(a.med_hoje)||has(a.med_meta)) P('- Resultado hoje: '+(val(a,'med_hoje')||'?')+'. Resultado esperado (meta, onde quer chegar): '+(val(a,'med_meta')||'?'));
+  kv('O que deve acontecer para considerar pronto e funcionando',a.fluxo_pronto);
   P('');
 
   P('## 4. FLUXO DESEJADO');
@@ -502,7 +503,6 @@ function buildPrompt(a){
   P('- Status ou situações para monitorar: '+(a.fluxo_status_usa==='sim'?'sim, cada item tem uma situação que pode ser acompanhada':a.fluxo_status_usa==='nao'?'não é necessário':'(não informado)'));
   P('- Aprovação: '+(a.aprov==='sim'?'sim. '+val(a,'aprov_quem'):a.aprov==='nao'?'não existe':'(não informado)'));
   P('- Histórico de alterações: '+(a.fluxo_hist==='sim'?'sim, guardar quem mudou o quê e quando':a.fluxo_hist==='nao'?'não é necessário':'(não informado)'));
-  kv('O que deve acontecer para considerar pronto e funcionando',a.fluxo_pronto);
   P('');
 
   P('## 5. USUÁRIOS E ACESSOS');
@@ -622,13 +622,13 @@ var STEPS=[
   R('fluxo_status_usa','Os itens terão status ou situações para monitorar?',[['sim','Sim, quero acompanhar'],['nao','Não precisa']],{hint:'Ex.: novo, em andamento, concluído.'}),
   R('aprov','Alguém precisa aprovar antes de seguir?',[['sim','Sim'],['nao','Não']]),
   T('aprov_quem','Quem aprova e o que acontece se recusar?',{show:function(a){return a.aprov==='sim'}}),
-  R('fluxo_hist','Você quer guardar o histórico de quem mudou o quê e quando?',[['sim','Sim'],['nao','Não']]),
-  A('fluxo_pronto','O que deve acontecer para você considerar pronto e funcionando?',{opt:1,hint:'Pense no final do caminho: o que você precisa ver acontecer para dizer "deu certo"?',ph:'Ex.: o pedido aparece na tela de acompanhamento e o cliente recebe a confirmação, sem ninguém digitar duas vezes.',rows:3})
+  R('fluxo_hist','Você quer guardar o histórico de quem mudou o quê e quando?',[['sim','Sim'],['nao','Não']])
  ]},
  {k:'Do resultado ao número',h1:'Defina como saber se ',h2:'está funcionando',title:'Resultado e medição',why:'Compare onde você está hoje com onde quer chegar.',blocks:[
   T('med_ind','O que você vai acompanhar para saber se está funcionando?',{ph:'Ex.: tempo para concluir um pedido'}),
   T('med_hoje','Qual é o resultado hoje?',{ph:'Ex.: 45 minutos por pedido',nudge:function(a){return has(a.med_hoje)&&!/\d/.test(a.med_hoje)?'De quanto para quanto? Coloque um número, mesmo que seja uma estimativa.':''}}),
-  T('med_meta','Qual é o resultado esperado (meta)? Onde você quer chegar com esse sistema?',{ph:'Ex.: 15 minutos por pedido',nudge:function(a){return has(a.med_meta)&&!/\d/.test(a.med_meta)?'De quanto para quanto? Coloque um número, mesmo que seja uma estimativa.':''}})
+  T('med_meta','Qual é o resultado esperado (meta)? Onde você quer chegar com esse sistema?',{ph:'Ex.: 15 minutos por pedido',nudge:function(a){return has(a.med_meta)&&!/\d/.test(a.med_meta)?'De quanto para quanto? Coloque um número, mesmo que seja uma estimativa.':''}}),
+  A('fluxo_pronto','O que deve acontecer para você considerar pronto e funcionando?',{opt:1,hint:'Pense no final do caminho: o que você precisa ver acontecer para dizer "deu certo"?',ph:'Ex.: o pedido aparece na tela de acompanhamento e o cliente recebe a confirmação, sem ninguém digitar duas vezes.',rows:3})
  ]},
  {k:'Quem usa e o que vê',h1:'Defina quem ',h2:'usa e o que cada um acessa',title:'Usuários e acessos',why:'Cada pessoa vê o que precisa, e só isso.',blocks:[
   {type:'select',id:'usu_qtd',label:'Quantas pessoas vão usar?',options:QTD},
