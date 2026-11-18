@@ -429,7 +429,8 @@ function gaps(a){
   var g=[];var add=function(s,t){g.push({s:s,t:t})};
   if(!has(a.ideia)) add(0,'Você ainda não descreveu a ideia.');
   if(!has(a.problema)) add(0,'Falta dizer o que vai funcionar melhor com o sistema.');
-  if(!has(a.hoje_como)) add(0,'Falta contar se esse processo existe hoje e como é feito.');
+  if(!has(a.hoje_como)) add(0,'Falta contar como isso é feito hoje.');
+  if(!has(a.hoje_problema)) add(0,'Falta contar o que mais incomoda hoje.');
   if(!/\d/.test(a.med_hoje||'')) add(1,'O indicador de hoje está sem número.');
   if(!/\d/.test(a.med_meta||'')) add(1,'A meta está sem número. De quanto para quanto?');
   var ls=lines(a.fluxo_passos);
@@ -487,6 +488,7 @@ function buildPrompt(a){
 
   P('## 2. SITUAÇÃO ATUAL');
   if(has(a.hoje_como)) kv('Como é feito hoje (ou como as pessoas se viram sem o sistema)',a.hoje_como); else P('- (não informado)');
+  kv('O que mais incomoda hoje (maior problema, ou o que acontece diferente do esperado)',a.hoje_problema);
   P('');
 
   P('## 3. RESULTADO ESPERADO E MEDIÇÃO');
@@ -605,8 +607,9 @@ var STEPS=[
   A('ideia','Qual é a sua ideia, em uma frase?',{hint:'Escreva do jeito que você explicaria para um amigo.',nudge:function(a){return vagueIdeia(a)?'Ficou curtinho. Responda a pergunta logo abaixo para a ideia ficar concreta.':''}}),
   A('ideia_ex','Me conta um exemplo real de quando isso aconteceu.',{show:function(a){return vagueIdeia(a)||has(a.ideia_ex)}}),
   A('problema','O que vai funcionar melhor com o sistema?',{hint:'Mais rápido, mais organizado, sem retrabalho, com tudo num lugar só… conte o que você imagina.'}),
-  {type:'sec',id:'sec2',num:'2',title:'Como funciona hoje',desc:'Se já existe, mostre como é feito e o que dá para facilitar. Se não, como as pessoas se viram.'},
-  A('hoje_como','Esse processo existe hoje? Como é feito?',{hint:'Se existe, conte do começo ao fim: com o quê (planilha, papel, WhatsApp), quem faz e o que poderia ficar mais fácil. Se ainda não existe, diga como as pessoas se viram hoje.',rows:5}),
+  {type:'sec',id:'sec2',num:'2',title:'Como funciona hoje',desc:'Conte como as coisas são feitas agora e o que mais incomoda.'},
+  A('hoje_como','Como isso é feito hoje?',{hint:'Conte do começo ao fim, do jeito que acontece: onde anota, quem faz cada parte, com o que (planilha, papel, WhatsApp). Se ainda não existe, conte como as pessoas se viram.',rows:5}),
+  A('hoje_problema','O que mais incomoda hoje?',{hint:'Qual é o maior problema? O que acontece diferente do que deveria? Ex.: informação que se perde, retrabalho, demora, o mesmo erro se repetindo.',rows:4}),
   {type:'sec',id:'sec3',num:'3',title:'Como o sistema deve funcionar',desc:'Pense no caminho: como começa, o que acontece e como termina.'},
   A('fluxo_passos','Como deve funcionar, passo a passo?',{hint:'Um passo por linha, do primeiro ao último. Escreva do jeito que você contaria para alguém.',ph:'Ex.:\nO responsável cadastra o pedido\nA equipe executa e registra o andamento\nO gestor confere e aprova\nO cliente recebe a confirmação',rows:5}),
   D('resp',function(a){
@@ -713,7 +716,7 @@ function reviewHTML(a){
   var g=gaps(a);
   var cc=cads(a);var tl=L(a,'telas').map(function(k){return labelOf(TELAS,k)});
   var rows=[
-   ['Ideia',short(a.ideia,140)],['Melhoria esperada',short(a.problema,140)],
+   ['Ideia',short(a.ideia,140)],['Melhoria esperada',short(a.problema,140)],['Maior incômodo hoje',short(a.hoje_problema,140)],
    ['De → para',(has(a.med_hoje)||has(a.med_meta))?(val(a,'med_hoje')||'?')+' → '+(val(a,'med_meta')||'?'):''],
    ['Fluxo',lines(a.fluxo_passos).length?lines(a.fluxo_passos).length+' passos':''],
    ['Usuários',a.usu_qtd?labelOf(QTD,a.usu_qtd)+(a.usu_login?' · '+labelOf(LOGIN,a.usu_login):''):''],
