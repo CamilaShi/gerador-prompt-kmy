@@ -429,7 +429,7 @@ function gaps(a){
   var g=[];var add=function(s,t){g.push({s:s,t:t})};
   if(!has(a.ideia)) add(0,'Você ainda não descreveu a ideia.');
   if(!has(a.problema)) add(0,'Falta dizer o que vai funcionar melhor com o sistema.');
-  if(!has(a.hoje_como)) add(0,'Falta contar como isso é feito hoje.');
+  if(!has(a.hoje_como)) add(0,'Falta contar como o processo é realizado hoje.');
   if(!has(a.hoje_problema)) add(0,'Falta contar o que mais incomoda hoje.');
   if(!/\d/.test(a.med_hoje||'')) add(1,'O indicador de hoje está sem número.');
   if(!/\d/.test(a.med_meta||'')) add(1,'A meta está sem número. De quanto para quanto?');
@@ -502,6 +502,7 @@ function buildPrompt(a){
   P('- Status ou situações para monitorar: '+(a.fluxo_status_usa==='sim'?'sim, cada item tem uma situação que pode ser acompanhada':a.fluxo_status_usa==='nao'?'não é necessário':'(não informado)'));
   P('- Aprovação: '+(a.aprov==='sim'?'sim. '+val(a,'aprov_quem'):a.aprov==='nao'?'não existe':'(não informado)'));
   P('- Histórico de alterações: '+(a.fluxo_hist==='sim'?'sim, guardar quem mudou o quê e quando':a.fluxo_hist==='nao'?'não é necessário':'(não informado)'));
+  kv('O que deve acontecer para considerar pronto e funcionando',a.fluxo_pronto);
   P('');
 
   P('## 5. USUÁRIOS E ACESSOS');
@@ -608,7 +609,7 @@ var STEPS=[
   A('ideia_ex','Me conta um exemplo real de quando isso aconteceu.',{show:function(a){return vagueIdeia(a)||has(a.ideia_ex)}}),
   A('problema','O que vai funcionar melhor com o sistema?',{hint:'Mais rápido, mais organizado, sem retrabalho, com tudo num lugar só… conte o que você imagina.'}),
   {type:'sec',id:'sec2',num:'2',title:'Como funciona hoje',desc:'Conte como as coisas são feitas agora e o que mais incomoda.'},
-  A('hoje_como','Como isso é feito hoje?',{hint:'Conte do começo ao fim, do jeito que acontece: onde anota, quem faz cada parte, com o que (planilha, papel, WhatsApp). Se ainda não existe, conte como as pessoas se viram.',rows:5}),
+  A('hoje_como','Como o processo é realizado hoje?',{hint:'Conte do começo ao fim, do jeito que acontece: onde anota, quem faz cada parte, com o que (planilha, papel, WhatsApp). Se ainda não existe, conte como as pessoas se viram.',rows:5}),
   A('hoje_problema','O que mais incomoda hoje?',{hint:'Qual é o maior problema? O que acontece diferente do que deveria? Ex.: informação que se perde, retrabalho, demora, o mesmo erro se repetindo.',rows:4}),
   {type:'sec',id:'sec3',num:'3',title:'Como o sistema deve funcionar',desc:'Pense no caminho: como começa, o que acontece e como termina.'},
   A('fluxo_passos','Como deve funcionar, passo a passo?',{hint:'Um passo por linha, do primeiro ao último. Escreva do jeito que você contaria para alguém.',ph:'Ex.:\nO responsável cadastra o pedido\nA equipe executa e registra o andamento\nO gestor confere e aprova\nO cliente recebe a confirmação',rows:5}),
@@ -622,6 +623,7 @@ var STEPS=[
   R('aprov','Alguém precisa aprovar antes de seguir?',[['sim','Sim'],['nao','Não']]),
   T('aprov_quem','Quem aprova e o que acontece se recusar?',{show:function(a){return a.aprov==='sim'}}),
   R('fluxo_hist','Você quer guardar o histórico de quem mudou o quê e quando?',[['sim','Sim'],['nao','Não']]),
+  A('fluxo_pronto','O que deve acontecer para você considerar pronto e funcionando?',{opt:1,hint:'Pense no final do caminho: o que você precisa ver acontecer para dizer "deu certo"?',ph:'Ex.: o pedido aparece na tela de acompanhamento e o cliente recebe a confirmação, sem ninguém digitar duas vezes.',rows:3})
  ]},
  {k:'Do resultado ao número',h1:'Defina como saber se ',h2:'está funcionando',title:'Resultado e medição',why:'Compare onde você está hoje com onde quer chegar.',blocks:[
   T('med_ind','O que você vai acompanhar para saber se está funcionando?',{ph:'Ex.: tempo para concluir um pedido'}),
