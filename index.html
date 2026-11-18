@@ -238,6 +238,15 @@ h2{color:var(--ink);font-size:clamp(26px,3.6vw,34px);line-height:1.12}
 .perm-t{margin:0;font-weight:800;font-size:17px;color:var(--accent)}
 .perm-opts{grid-template-columns:repeat(auto-fit,minmax(min(100%,128px),1fr))}
 .stack>.actions,.q .actions{margin:4px 0 2px}
+
+.opt:has(input[type=checkbox]){border-color:transparent;background:transparent;padding:6px 8px;gap:8px;align-items:center}
+.opt:has(input[type=checkbox]):hover{background:var(--tint)}
+.opt:has(input[type=checkbox]:checked){border-color:transparent;background:var(--tint)}
+.opt:has(input[type=checkbox]) b{font-size:14px;font-weight:600;line-height:1.3}
+.opt:has(input[type=checkbox]) small{font-size:12.5px}
+.opt input[type=checkbox]{width:18px;height:18px;border-radius:5px;margin-top:0}
+.opts:has(input[type=checkbox]){grid-template-columns:repeat(auto-fill,minmax(min(100%,200px),1fr));gap:2px 6px}
+.perm-opts{grid-template-columns:repeat(auto-fill,minmax(min(100%,150px),1fr))}
 [hidden]{display:none!important}
 body{margin:0}
 img{max-width:100%}
@@ -347,7 +356,7 @@ function slug(s){return norm(s).replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'')|
 var PERFIS=[['adm','Administrador','dono ou gestor, vê tudo'],['ger','Gerente','acompanha e aprova'],['ven','Vendedor','atende e registra vendas'],['atd','Atendente','cadastra e acompanha'],['fin','Financeiro','contas e valores'],['ope','Equipe operacional','executa o trabalho'],['cli','Cliente','acesso externo, só o dele']];
 var PERMC=[['ver','Ver'],['criar','Criar novo'],['editar','Editar'],['excluir','Excluir'],['telas','Acessar outras telas']];
 function roles(a){
-  if(a.usu_qtd==='so-eu')return [];
+  if(a.usu_qtd==='so-eu'||a.usu_hier!=='sim')return [];
   var r=L(a,'usu_tipos_opts').map(function(k){return labelOf(PERFIS,k)});
   String(a.usu_tipos_outro||'').split(/[,;\n]/).forEach(function(x){x=x.trim();if(x)r.push(x)});
   return uniq(r);
@@ -423,7 +432,8 @@ function gaps(a){
   if(!a.usu_qtd) add(2,'Falta dizer quantas pessoas vão usar.');
   if(a.usu_qtd&&a.usu_qtd!=='so-eu'){
     var rs=roles(a);
-    if(!rs.length) add(2,'Falta definir os tipos de usuário.');
+    if(!a.usu_hier) add(2,'Falta dizer se terá hierarquia ou acessos diferentes por tipo de usuário.');
+    else if(a.usu_hier==='sim'&&!rs.length) add(2,'Falta definir os tipos de usuário.');
     else rs.forEach(function(r){if(!L(a,'perm').some(function(x){return x.indexOf(r+'|')===0})) add(2,'Falta marcar o que "'+r+'" pode fazer.')});
   }
   if(!a.usu_login) add(2,'Falta escolher o tipo de login.');
@@ -484,6 +494,7 @@ function buildPrompt(a){
   P('## 5. USUÁRIOS E ACESSOS');
   kv('Quantidade',labelOf(QTD,a.usu_qtd||''));
   var rs2=roles(a);
+  if(a.usu_qtd&&a.usu_qtd!=='so-eu') P('- Hierarquia ou acessos diferentes por tipo: '+(a.usu_hier==='sim'?'sim':a.usu_hier==='nao'?'não, todos têm o mesmo acesso':'(não informado)'));
   if(rs2.length){P('- Tipos de usuário e permissões:');rs2.forEach(function(r){var ps=PERMC.filter(function(c){return L(a,'perm').indexOf(r+'|'+c[0])>=0}).map(function(c){return c[1].toLowerCase()});var tl=val(a,'pt__'+slug(r));P('  - '+r+': '+(ps.length?ps.join(', '):'(permissões não definidas)')+(tl?'; telas: '+tl:''))})}
   kv('Regras extras de acesso',a.usu_acesso);
   kv('Login',a.usu_login?labelOf(LOGIN,a.usu_login):'');
@@ -579,18 +590,18 @@ var vagueIdeia=function(a){return isVague(a.ideia)};
 var STEPS=[
  {k:'Da ideia ao funcionamento',h1:'Conte a sua ideia e ',h2:'como ela deve funcionar',title:'Ideia e funcionamento',why:'Imagine o sistema funcionando e conte o que vai melhorar, do seu jeito, sem termos técnicos.',blocks:[
   {type:'sec',id:'sec1',num:'01',title:'Sobre a ideia',desc:'Conte o que você quer criar e o que vai ficar melhor com isso.'},
-  T('nome','Nome do sistema',{opt:1,ph:'Ex.: Controle de Ordens de Serviço'}),
+  T('nome','Nome do sistema',{opt:1,ph:'Ex.: Controle de Pedidos'}),
   A('ideia','Qual é a sua ideia, em uma frase?',{hint:'Escreva do jeito que você explicaria para um amigo.',nudge:function(a){return vagueIdeia(a)?'Ficou curtinho. Responda a pergunta logo abaixo para a ideia ficar concreta.':''}}),
   A('ideia_ex','Me conta um exemplo real de quando isso aconteceu.',{show:function(a){return vagueIdeia(a)||has(a.ideia_ex)}}),
   A('problema','O que vai funcionar melhor com o sistema?',{hint:'Mais rápido, mais organizado, sem retrabalho, com tudo num lugar só… conte o que você imagina.'}),
   {type:'sec',id:'sec2',num:'02',title:'Como funciona hoje',desc:'Se já existe, mostre como é feito e o que dá para facilitar. Se não, como as pessoas se viram.'},
   A('hoje_como','Esse processo existe hoje? Como é feito?',{hint:'Se existe, conte do começo ao fim: com o quê (planilha, papel, WhatsApp), quem faz e o que poderia ficar mais fácil. Se ainda não existe, diga como as pessoas se viram hoje.',rows:5}),
   {type:'sec',id:'sec3',num:'03',title:'Como o sistema deve funcionar',desc:'Pense no caminho: como começa, o que acontece e como termina.'},
-  A('fluxo_passos','Como deve funcionar, passo a passo?',{hint:'Um passo por linha, do primeiro ao último. Escreva do jeito que você contaria para alguém.',ph:'Ex.:\nA recepção cadastra o cliente e o veículo\nO mecânico registra o serviço feito\nO gerente confere e aprova\nO cliente retira o veículo',rows:5}),
+  A('fluxo_passos','Como deve funcionar, passo a passo?',{hint:'Um passo por linha, do primeiro ao último. Escreva do jeito que você contaria para alguém.',ph:'Ex.:\nO responsável cadastra o pedido\nA equipe executa e registra o andamento\nO gestor confere e aprova\nO cliente recebe a confirmação',rows:5}),
   D('resp',function(a){
     var ls=lines(a.fluxo_passos).slice(0,12);if(!ls.length)return '';
     return '<p class="lab">Quem faz cada passo?</p><div class="stack">'+ls.map(function(l,i){
-      return '<div class="row"><label class="sub" for="f_resp'+i+'">'+(i+1)+'. '+esc(short(l,80))+'</label><input class="in" type="text" id="f_resp'+i+'" data-k="resp__'+i+'" value="'+esc(a['resp__'+i]||'')+'" placeholder="Ex.: recepção"></div>';
+      return '<div class="row"><label class="sub" for="f_resp'+i+'">'+(i+1)+'. '+esc(short(l,80))+'</label><input class="in" type="text" id="f_resp'+i+'" data-k="resp__'+i+'" value="'+esc(a['resp__'+i]||'')+'" placeholder="Ex.: equipe de atendimento"></div>';
     }).join('')+'</div>';
   },function(a){return lines(a.fluxo_passos).slice(0,12).join('|')}),
   R('fluxo_status_usa','Os itens terão status ou situações para monitorar?',[['sim','Sim, quero acompanhar'],['nao','Não precisa']],{hint:'Ex.: novo, em andamento, concluído.'}),
@@ -600,16 +611,17 @@ var STEPS=[
  ]},
  {k:'Do resultado ao número',h1:'Defina como saber que ',h2:'melhorou',title:'Resultado e medição',why:'Sem o número de partida, ninguém sabe se melhorou.',blocks:[
   A('res_muda','O que muda quando isso funcionar?'),
-  T('med_ind','O que você vai medir para saber se melhorou?',{ph:'Ex.: tempo para fechar uma ordem de serviço'}),
+  T('med_ind','O que você vai medir para saber se melhorou?',{ph:'Ex.: tempo para concluir um pedido'}),
   T('med_hoje','Como está hoje, com número?',{ph:'Ex.: 45 minutos',nudge:function(a){return has(a.med_hoje)&&!/\d/.test(a.med_hoje)?'De quanto para quanto? Coloque um número, mesmo que seja uma estimativa.':''}}),
   T('med_meta','Qual é a meta?',{ph:'Ex.: 15 minutos',nudge:function(a){return has(a.med_meta)&&!/\d/.test(a.med_meta)?'De quanto para quanto? Coloque um número, mesmo que seja uma estimativa.':''}})
  ]},
  {k:'Quem usa e o que vê',h1:'Defina quem ',h2:'usa e o que cada um acessa',title:'Usuários e acessos',why:'Cada pessoa vê o que precisa, e só isso.',blocks:[
   {type:'select',id:'usu_qtd',label:'Quantas pessoas vão usar?',options:QTD},
-  C('usu_tipos_opts','Quais tipos de usuário vão existir?',PERFIS,{hint:'Marque os que se aplicam.',show:function(a){return a.usu_qtd&&a.usu_qtd!=='so-eu'}}),
-  T('usu_tipos_outro','Outros tipos (separe por vírgula)',{opt:1,ph:'Ex.: Mecânico, Estoquista',show:function(a){return a.usu_qtd&&a.usu_qtd!=='so-eu'}}),
-  D('perm',permHTML,function(a){return roles(a).join('|')},{show:function(a){return a.usu_qtd&&a.usu_qtd!=='so-eu'}}),
-  A('usu_acesso','Mais alguma regra de acesso?',{opt:1,hint:'Ex.: o vendedor só vê os próprios clientes.',rows:2,show:function(a){return roles(a).length>0}}),
+  R('usu_hier','Terá hierarquia ou acessos diferentes por tipo de usuário?',[['sim','Sim, cada tipo acessa coisas diferentes'],['nao','Não, todos têm o mesmo acesso']],{hint:'Ex.: um administrador que vê tudo e outros perfis com acesso limitado.',show:function(a){return a.usu_qtd&&a.usu_qtd!=='so-eu'}}),
+  C('usu_tipos_opts','Quais tipos de usuário vão existir?',PERFIS,{hint:'Marque os que se aplicam.',show:function(a){return a.usu_hier==='sim'}}),
+  T('usu_tipos_outro','Outros tipos (separe por vírgula)',{opt:1,ph:'Ex.: Estoquista, Supervisor',show:function(a){return a.usu_hier==='sim'}}),
+  D('perm',permHTML,function(a){return roles(a).join('|')},{show:function(a){return a.usu_hier==='sim'}}),
+  A('usu_acesso','Mais alguma regra de acesso?',{opt:1,hint:'Ex.: cada pessoa só vê os próprios registros.',rows:2,show:function(a){return roles(a).length>0}}),
   {type:'select',id:'usu_login',label:'Como será o login?',options:LOGIN},
   D('usu_notes',function(a){
     var t=[];
@@ -621,7 +633,7 @@ var STEPS=[
   },function(a){return (a.usu_qtd==='so-eu'?'1':'0')+(a.usu_login||'')})
  ]},
  {k:'Dados sem digitar duas vezes',h1:'Organize ',h2:'cadastros e dados',title:'Cadastros e dados',why:'Digite o dado uma vez só, em um lugar só.',blocks:[
-  A('cad_lista','Quais cadastros o sistema precisa ter?',{hint:'Um por linha ou separados por vírgula. Ex.: Clientes, Veículos, Serviços.',rows:3}),
+  A('cad_lista','Quais cadastros o sistema precisa ter?',{hint:'Um por linha ou separados por vírgula. Ex.: Clientes, Produtos, Pedidos.',rows:3}),
   D('cad_campos',function(a){
     var c=cads(a);if(!c.length)return '';
     return '<p class="lab">Quais informações ficam em cada cadastro?</p><div class="stack">'+c.map(function(x){
@@ -635,7 +647,7 @@ var STEPS=[
     }).join('');
   },function(a){return missingEnt(a).map(function(e){return e[0]}).join('|')}),
   A('cad_listas','Existem listas suspensas? Quais?',{hint:'Ex.: Status (Novo, Em andamento, Concluído); Forma de pagamento.',rows:2,opt:1}),
-  T('cad_id','Existe algum ID que liga as informações?',{hint:'Ex.: o número da ordem de serviço liga cliente, veículo e serviço.'})
+  T('cad_id','Existe algum ID que liga as informações?',{hint:'Ex.: o número do pedido liga cliente, produto e pagamento.'})
  ]},
  {k:'O que aparece na tela',h1:'Escolha ',h2:'as telas e o dashboard',title:'Telas e dashboard',why:'As telas nascem do fluxo e os indicadores da sua meta.',blocks:[
   D('telas_sug',function(a){
@@ -655,7 +667,7 @@ var STEPS=[
   T('dash_visual','Cores ou identidade visual',{opt:1,ph:'Ex.: azul e laranja, sem muito enfeite'})
  ]},
  {k:'O que nunca pode acontecer',h1:'Defina ',h2:'regras e limites',title:'Regras e limites',why:'Melhor impedir o erro do que corrigir depois.',blocks:[
-  A('regras_neg','Regras de negócio',{hint:'Ex.: toda ordem de serviço precisa ter cliente e veículo.'}),
+  A('regras_neg','Regras de negócio',{hint:'Ex.: todo pedido precisa ter cliente e pelo menos um item.'}),
   A('travas','Travas: se acontecer X, o sistema bloqueia Y',{hint:'Ex.: se o valor estiver vazio, o botão Salvar fica bloqueado.'}),
   A('automat','Automatizações desejadas',{hint:'O que o computador deve fazer sozinho? Ex.: avisar quando um prazo vencer.',opt:1}),
   C('nunca','O que o sistema NUNCA pode fazer?',NUNCA.map(function(n){return [n[0],n[1]]}),{cls:'nunca'}),
@@ -668,7 +680,7 @@ var STEPS=[
   },function(a){return L(a,'nunca').join('|')})
  ]},
  {k:'O critério de pronto',h1:'Diga quando ',h2:'está pronto',title:'Pronto quando…',why:'Sem critério de pronto, qualquer coisa vira pronto.',blocks:[
-  T('pronto_acao','A pessoa consegue…',{ph:'Ex.: abrir uma ordem de serviço',nudge:function(a){return has(a.pronto_acao)&&isVague(a.pronto_acao)?'Como você testaria isso? Descreva o que a pessoa faria na tela.':''}}),
+  T('pronto_acao','A pessoa consegue…',{ph:'Ex.: registrar um pedido completo',nudge:function(a){return has(a.pronto_acao)&&isVague(a.pronto_acao)?'Como você testaria isso? Descreva o que a pessoa faria na tela.':''}}),
   A('pronto_teste','Como você testaria isso?',{rows:2,show:function(a){return (has(a.pronto_acao)&&isVague(a.pronto_acao))||has(a.pronto_teste)}}),
   T('pronto_tempo','Em quantos minutos?',{ph:'Ex.: 2',mode:'numeric'}),
   T('pronto_sem','Sem precisar de…',{ph:'Ex.: ajuda, papel ou planilha paralela'}),
