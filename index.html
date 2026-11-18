@@ -230,6 +230,7 @@ h2{color:var(--ink);font-size:clamp(26px,3.6vw,34px);line-height:1.12}
 
 .sec{display:flex;gap:14px;align-items:center;padding:4px 0 14px;border-bottom:2px solid var(--tint);position:relative}
 .sec::after{content:"";position:absolute;left:0;bottom:-2px;width:96px;height:2px;background:var(--accent)}
+.sec[hidden]{display:none}
 .sec:not(:first-child){margin-top:14px}
 .sec-n{flex:none;width:44px;height:44px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:600;font-size:16px}
 .sec h3{margin:0;font-size:19px;font-weight:600;color:var(--ink);line-height:1.2}
@@ -632,12 +633,15 @@ var STEPS=[
   T('med_meta','Qual é o resultado esperado (meta)? Onde você quer chegar com esse sistema?',{ph:'Ex.: 15 minutos por pedido',nudge:function(a){return has(a.med_meta)&&!/\d/.test(a.med_meta)?'De quanto para quanto? Coloque um número, mesmo que seja uma estimativa.':''}})
  ]},
  {k:'Quem usa e o que vê',h1:'Defina quem ',h2:'usa e o que cada um acessa',title:'Usuários e acessos',why:'Cada pessoa vê o que precisa, e só isso.',blocks:[
+  {type:'sec',id:'sec_u',num:'1',title:'Quem vai usar',desc:'Quantas pessoas vão usar e quais tipos de usuário existem.'},
   {type:'select',id:'usu_qtd',label:'Quantas pessoas vão usar?',options:QTD},
   R('usu_hier','Terá hierarquia ou acessos diferentes por tipo de usuário?',[['sim','Sim, cada tipo acessa coisas diferentes'],['nao','Não, todos têm o mesmo acesso']],{hint:'Ex.: um administrador que vê tudo e outros perfis com acesso limitado.',show:function(a){return a.usu_qtd&&a.usu_qtd!=='so-eu'}}),
   C('usu_tipos_opts','Quais tipos de usuário vão existir?',PERFIS,{hint:'Marque os que se aplicam.',show:function(a){return a.usu_hier==='sim'}}),
   T('usu_tipos_outro','Outros tipos (separe por vírgula)',{opt:1,ph:'Ex.: Estoquista, Supervisor',show:function(a){return a.usu_hier==='sim'}}),
+  {type:'sec',id:'sec_a',num:'2',title:'Regras de acesso',desc:'O que cada tipo de usuário pode ver, criar, editar e excluir.',show:function(a){return !!a.usu_hier&&a.usu_qtd!=='so-eu'}},
   D('perm',permHTML,function(a){return roles(a).join('|')},{show:function(a){return a.usu_hier==='sim'}}),
-  A('usu_acesso','Mais alguma regra de acesso?',{opt:1,hint:'Ex.: cada pessoa só vê os próprios registros.',rows:2,show:function(a){return roles(a).length>0}}),
+  A('usu_acesso','Mais alguma regra de acesso?',{opt:1,hint:'Ex.: cada pessoa só vê os próprios registros.',ph:'Ex.: Vendedor vê só os próprios pedidos; cliente vê apenas o seu pedido.',rows:3,show:function(a){return !!a.usu_hier&&a.usu_qtd!=='so-eu'}}),
+  {type:'sec',id:'sec_l',num:'3',title:'Entrada no sistema',desc:'Como as pessoas vão entrar.'},
   {type:'select',id:'usu_login',label:'Como será o login?',options:LOGIN},
   D('usu_notes',function(a){
     var t=[];
@@ -739,7 +743,7 @@ function reviewHTML(a){
 /* ---------- renderização ---------- */
 var stage=$('#stage');
 function blockHTML(b){
-  if(b.type==='sec')return '<div class="sec"><span class="sec-n" aria-hidden="true">'+esc(b.num)+'</span><div><h3>'+esc(b.title)+'</h3><p>'+esc(b.desc)+'</p></div></div>';
+  if(b.type==='sec')return '<div class="sec" data-b="'+b.id+'"><span class="sec-n" aria-hidden="true">'+esc(b.num)+'</span><div><h3>'+esc(b.title)+'</h3><p>'+esc(b.desc)+'</p></div></div>';
   var id='f_'+b.id;var v=S.a[b.id];
   var opt=b.opt?' <span class="opt-tag">(opcional)</span>':'';
   var hint=b.hint?'<p class="hint" id="'+id+'_h">'+esc(b.hint)+'</p>':'';
@@ -809,6 +813,7 @@ function refresh(){
     if(b.nudge){var n=el.querySelector('[data-nudge]');var nt=show?(b.nudge(a)||''):'';n.hidden=!nt;if(n.textContent!==nt)n.textContent=nt}
     if(b.type==='dyn'){var sig=String(b.sig?b.sig(a):'');var box=el.querySelector('[data-dyn]');if(box.dataset.sig!==sig){box.dataset.sig=sig;box.innerHTML=b.dyn(a)}}
   });
+  var n=0;stage.querySelectorAll('.sec').forEach(function(x){if(!x.hidden){n++;var c=x.querySelector('.sec-n');if(c)c.textContent=n}});
   renderRail();renderProgress();
 }
 
