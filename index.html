@@ -248,13 +248,16 @@ h2{color:var(--ink);font-size:clamp(26px,3.6vw,34px);line-height:1.12}
 .opt:has(input[type=checkbox]) small{font-size:12.5px}
 .opt input[type=checkbox]{width:18px;height:18px;border-radius:5px;margin-top:0}
 .opts:has(input[type=checkbox]){grid-template-columns:repeat(auto-fill,minmax(min(100%,200px),1fr));gap:2px 6px}
-.cards .opts:has(input[type=checkbox]){grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.cards .opt:has(input[type=checkbox]){background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 18px;gap:14px;align-items:center}
-.cards .opt:has(input[type=checkbox]):hover{background:var(--tint)}
-.cards .opt:has(input[type=checkbox]:checked){background:#fff;border-color:var(--accent)}
-.cards .opt:has(input[type=checkbox]) b{font-size:15.5px;font-weight:500}
+.cards .opts:has(input[type=checkbox]){grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px}
+.cards .opt:has(input[type=checkbox]){background:#fff;border:1px solid #E6E8EE;border-radius:16px;padding:14px 18px;gap:16px;align-items:center;box-shadow:none}
+.cards .opt:has(input[type=checkbox]):hover{background:#FAFBFD}
+.cards .opt:has(input[type=checkbox]:checked){background:#fff;border-color:#E6E8EE}
+.cards .opt:has(input[type=checkbox]) b{font-size:15.5px;font-weight:400;color:var(--ink)}
 .cards .opt small{display:none}
-.cards .opt input[type=checkbox]{width:20px;height:20px}
+.cards .lab{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.cards .opt input[type=checkbox]{width:20px;height:20px;border:1.5px solid #6B7280;border-radius:5px;background:#fff}
+.cards .opt input[type=checkbox]:checked{background:#fff;border-color:#6B7280}
+.cards .opt input[type=checkbox]:checked::after{border-color:#6B7280}
 @media(max-width:560px){.cards .opts:has(input[type=checkbox]){grid-template-columns:1fr}}
 .perm-opts{grid-template-columns:repeat(auto-fill,minmax(min(100%,150px),1fr))}
 
