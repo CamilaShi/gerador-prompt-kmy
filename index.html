@@ -434,14 +434,14 @@ function gaps(a){
   if(!/\d/.test(a.med_hoje||'')) add(1,'O indicador de hoje está sem número.');
   if(!/\d/.test(a.med_meta||'')) add(1,'A meta está sem número. De quanto para quanto?');
   var ls=lines(a.fluxo_passos);
-  if(!ls.length) add(0,'O fluxo futuro ainda não tem passos.');
+  if(!ls.length) add(1,'O fluxo futuro ainda não tem passos.');
   else{
     var sem=[];ls.slice(0,12).forEach(function(l,i){if(!has(a['resp__'+i]))sem.push(l)});
-    sem.slice(0,3).forEach(function(l){add(0,'O passo "'+short(l,60)+'" está sem responsável. Quem faz isso?')});
-    if(sem.length>3) add(0,'Mais '+(sem.length-3)+' passos estão sem responsável.');
+    sem.slice(0,3).forEach(function(l){add(1,'O passo "'+short(l,60)+'" está sem responsável. Quem faz isso?')});
+    if(sem.length>3) add(1,'Mais '+(sem.length-3)+' passos estão sem responsável.');
   }
-  if(a.aprov==='sim'&&!has(a.aprov_quem)) add(0,'Você disse que existe aprovação, mas não definiu quem aprova.');
-  if(!a.aprov) add(0,'Falta responder se existe aprovação.');
+  if(a.aprov==='sim'&&!has(a.aprov_quem)) add(1,'Você disse que existe aprovação, mas não definiu quem aprova.');
+  if(!a.aprov) add(1,'Falta responder se existe aprovação.');
   if(!a.usu_qtd) add(2,'Falta dizer quantas pessoas vão usar.');
   if(a.usu_qtd&&a.usu_qtd!=='so-eu'){
     var rs=roles(a);
@@ -602,7 +602,7 @@ var D=function(id,dyn,sig,o){return Object.assign({type:'dyn',id:id,dyn:dyn,sig:
 
 var vagueIdeia=function(a){return isVague(a.ideia)};
 var STEPS=[
- {k:'Da ideia ao funcionamento',h1:'Conte a sua ideia e ',h2:'como ela deve funcionar',title:'Ideia e funcionamento',why:'Imagine o sistema funcionando e conte o que vai melhorar, do seu jeito, sem termos técnicos.',blocks:[
+ {k:'Da ideia ao funcionamento',h1:'Conte a sua ',h2:'ideia e como é hoje',title:'Ideia e situação atual',why:'Conte o que você quer criar e como as coisas funcionam hoje, do seu jeito, sem termos técnicos.',blocks:[
   {type:'sec',id:'sec1',num:'1',title:'Sobre a ideia',desc:'Conte o que você quer criar e o que vai ficar melhor com isso.'},
   T('nome','Nome do sistema',{opt:1,ph:'Ex.: Controle de Pedidos'}),
   A('ideia','Qual é a sua ideia, em uma frase?',{hint:'Escreva do jeito que você explicaria para um amigo.',nudge:function(a){return vagueIdeia(a)?'Ficou curtinho. Responda a pergunta logo abaixo para a ideia ficar concreta.':''}}),
@@ -610,8 +610,10 @@ var STEPS=[
   A('problema','O que vai funcionar melhor com o sistema?',{hint:'Mais rápido, mais organizado, sem retrabalho, com tudo num lugar só… conte o que você imagina.'}),
   {type:'sec',id:'sec2',num:'2',title:'Como funciona hoje',desc:'Conte como as coisas são feitas agora e o que mais incomoda.'},
   A('hoje_como','Como o processo é realizado hoje?',{hint:'Conte do começo ao fim, do jeito que acontece: onde anota, quem faz cada parte, com o que (planilha, papel, WhatsApp). Se ainda não existe, conte como as pessoas se viram.',rows:5}),
-  A('hoje_problema','O que mais incomoda hoje?',{hint:'Qual é o maior problema? O que acontece diferente do que deveria? Ex.: informação que se perde, retrabalho, demora, o mesmo erro se repetindo.',rows:4}),
-  {type:'sec',id:'sec3',num:'3',title:'Como o sistema deve funcionar',desc:'Pense no caminho: como começa, o que acontece e como termina.'},
+  A('hoje_problema','O que mais incomoda hoje?',{hint:'Qual é o maior problema? O que acontece diferente do que deveria? Ex.: informação que se perde, retrabalho, demora, o mesmo erro se repetindo.',rows:4})
+ ]},
+ {k:'Do funcionamento ao resultado',h1:'Defina como o sistema ',h2:'funciona e como medir',title:'Funcionamento e resultado',why:'Primeiro o caminho do começo ao fim, depois como saber se deu certo.',blocks:[
+  {type:'sec',id:'sec_f',num:'1',title:'Como o sistema deve funcionar',desc:'Pense no caminho: como começa, o que acontece e como termina.'},
   A('fluxo_passos','Como deve funcionar, passo a passo?',{hint:'Um passo por linha, do primeiro ao último. Escreva do jeito que você contaria para alguém.',ph:'Ex.:\nO responsável cadastra o pedido\nA equipe executa e registra o andamento\nO gestor confere e aprova\nO cliente recebe a confirmação',rows:5}),
   D('resp',function(a){
     var ls=lines(a.fluxo_passos).slice(0,12);if(!ls.length)return '';
@@ -622,13 +624,12 @@ var STEPS=[
   R('fluxo_status_usa','Os itens terão status ou situações para monitorar?',[['sim','Sim, quero acompanhar'],['nao','Não precisa']],{hint:'Ex.: novo, em andamento, concluído.'}),
   R('aprov','Alguém precisa aprovar antes de seguir?',[['sim','Sim'],['nao','Não']]),
   T('aprov_quem','Quem aprova e o que acontece se recusar?',{show:function(a){return a.aprov==='sim'}}),
-  R('fluxo_hist','Você quer guardar o histórico de quem mudou o quê e quando?',[['sim','Sim'],['nao','Não']])
- ]},
- {k:'Do resultado ao número',h1:'Defina como saber se ',h2:'está funcionando',title:'Resultado e medição',why:'Compare onde você está hoje com onde quer chegar.',blocks:[
+  R('fluxo_hist','Você quer guardar o histórico de quem mudou o quê e quando?',[['sim','Sim'],['nao','Não']]),
+  A('fluxo_pronto','O que deve acontecer para você considerar pronto e funcionando?',{opt:1,hint:'Pense no final do caminho: o que você precisa ver acontecer para dizer "deu certo"?',ph:'Ex.: o pedido aparece na tela de acompanhamento e o cliente recebe a confirmação, sem ninguém digitar duas vezes.',rows:3}),
+  {type:'sec',id:'sec_m',num:'2',title:'Como saber se está funcionando',desc:'Compare onde você está hoje com onde quer chegar.'},
   T('med_ind','O que você vai acompanhar para saber se está funcionando?',{ph:'Ex.: tempo para concluir um pedido'}),
   T('med_hoje','Qual é o resultado hoje?',{ph:'Ex.: 45 minutos por pedido',nudge:function(a){return has(a.med_hoje)&&!/\d/.test(a.med_hoje)?'De quanto para quanto? Coloque um número, mesmo que seja uma estimativa.':''}}),
-  T('med_meta','Qual é o resultado esperado (meta)? Onde você quer chegar com esse sistema?',{ph:'Ex.: 15 minutos por pedido',nudge:function(a){return has(a.med_meta)&&!/\d/.test(a.med_meta)?'De quanto para quanto? Coloque um número, mesmo que seja uma estimativa.':''}}),
-  A('fluxo_pronto','O que deve acontecer para você considerar pronto e funcionando?',{opt:1,hint:'Pense no final do caminho: o que você precisa ver acontecer para dizer "deu certo"?',ph:'Ex.: o pedido aparece na tela de acompanhamento e o cliente recebe a confirmação, sem ninguém digitar duas vezes.',rows:3})
+  T('med_meta','Qual é o resultado esperado (meta)? Onde você quer chegar com esse sistema?',{ph:'Ex.: 15 minutos por pedido',nudge:function(a){return has(a.med_meta)&&!/\d/.test(a.med_meta)?'De quanto para quanto? Coloque um número, mesmo que seja uma estimativa.':''}})
  ]},
  {k:'Quem usa e o que vê',h1:'Defina quem ',h2:'usa e o que cada um acessa',title:'Usuários e acessos',why:'Cada pessoa vê o que precisa, e só isso.',blocks:[
   {type:'select',id:'usu_qtd',label:'Quantas pessoas vão usar?',options:QTD},
