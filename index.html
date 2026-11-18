@@ -248,6 +248,14 @@ h2{color:var(--ink);font-size:clamp(26px,3.6vw,34px);line-height:1.12}
 .opt:has(input[type=checkbox]) small{font-size:12.5px}
 .opt input[type=checkbox]{width:18px;height:18px;border-radius:5px;margin-top:0}
 .opts:has(input[type=checkbox]){grid-template-columns:repeat(auto-fill,minmax(min(100%,200px),1fr));gap:2px 6px}
+.cards .opts:has(input[type=checkbox]){grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.cards .opt:has(input[type=checkbox]){background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 18px;gap:14px;align-items:center}
+.cards .opt:has(input[type=checkbox]):hover{background:var(--tint)}
+.cards .opt:has(input[type=checkbox]:checked){background:#fff;border-color:var(--accent)}
+.cards .opt:has(input[type=checkbox]) b{font-size:15.5px;font-weight:500}
+.cards .opt small{display:none}
+.cards .opt input[type=checkbox]{width:20px;height:20px}
+@media(max-width:560px){.cards .opts:has(input[type=checkbox]){grid-template-columns:1fr}}
 .perm-opts{grid-template-columns:repeat(auto-fill,minmax(min(100%,150px),1fr))}
 
 h1,h2,h3{letter-spacing:0}
@@ -360,12 +368,12 @@ var LOGIN=[['simples','Login simples controlado pelo Google Sheets'],['misto','P
 var ESTRUT=[['lateral','Menu lateral e conteúdo principal'],['superior','Menu superior e conteúdo principal'],['dashini','Dashboard como página inicial'],['ia','Deixar a IA sugerir a melhor estrutura']];
 var ENT=[['cliente','Clientes'],['produto','Produtos'],['fornecedor','Fornecedores'],['pedido','Pedidos'],['funcionari','Funcionários'],['colaborador','Colaboradores'],['veiculo','Veículos'],['servico','Serviços'],['venda','Vendas'],['orcamento','Orçamentos'],['tarefa','Tarefas'],['equipamento','Equipamentos'],['solicitac','Solicitações'],['chamado','Chamados'],['projeto','Projetos'],['aluno','Alunos'],['paciente','Pacientes'],['contrato','Contratos'],['pagamento','Pagamentos'],['documento','Documentos'],['peca','Peças']];
 var ENTREGA=[
- ['explicar','Explicar antes de construir','A IA resume o que entendeu e pergunta o que faltar antes de escrever código'],
- ['etapas','Construir por etapas','Uma etapa por vez, e só avança quando eu disser ok'],
- ['completos','Arquivos completos','Código inteiro de cada arquivo, pronto para copiar e colar'],
- ['testes','Explicar como testar','Passo a passo para conferir cada etapa e o critério de pronto'],
+ ['explicar','Explicar antes','A IA resume o que entendeu e pergunta o que faltar antes de escrever código'],
+ ['etapas','Criar por etapas','Uma etapa por vez, e só avança quando eu disser ok'],
  ['sheets','Usar Google Sheets','Dados guardados em planilha, com Apps Script, sem custo'],
- ['github','Publicar no GitHub','Passo a passo para colocar o sistema no ar com o GitHub Pages']
+ ['github','Publicar no GitHub','Passo a passo para colocar o sistema no ar com o GitHub Pages'],
+ ['completos','Arquivos completos','Código inteiro de cada arquivo, pronto para copiar e colar'],
+ ['testes','Explicar testes','Passo a passo para conferir cada etapa e o critério de pronto']
 ];
 
 /* ---------- regras de raciocínio ---------- */
@@ -713,7 +721,7 @@ var STEPS=[
  ]},
  {k:'Conferir e gerar',h1:'Revise e ',h2:'gere o seu prompt',title:'Entrega e revisão',why:'Última conferência antes de gerar o prompt.',blocks:[
   {type:'sec',id:'sec_e1',num:'1',title:'Como você quer receber o projeto?',desc:'Marque como a IA deve conduzir a construção do sistema.'},
-  C('entrega','Marque o que se aplica',ENTREGA),
+  C('entrega','Marque o que se aplica',ENTREGA,{cls:'cards'}),
   A('obs','Observações finais',{opt:1,rows:4,ph:'Inclua qualquer detalhe que não apareceu nas perguntas anteriores.'}),
   {type:'sec',id:'sec_e2',num:'2',title:'Revise antes de gerar',desc:'Confira o que eu entendi. Os pontos em aberto não impedem de gerar.'},
   D('review',function(a){return reviewHTML(a)},function(a){return JSON.stringify(a)},{cls:'review-wrap'})
