@@ -228,12 +228,11 @@ h2{color:var(--ink);font-size:clamp(26px,3.6vw,34px);line-height:1.12}
 .mprog{display:none!important}
 @media (max-width:640px){.stage-head{padding:16px 18px 18px}}
 
-.sec{display:flex;gap:14px;align-items:center;padding:4px 0 14px;border-bottom:2px solid var(--tint);position:relative}
-.sec::after{content:"";position:absolute;left:0;bottom:-2px;width:96px;height:2px;background:var(--accent)}
+.sec{display:flex;gap:12px;align-items:center;padding:2px 0 6px;position:relative}
 .sec[hidden]{display:none}
 .sec:not(:first-child){margin-top:14px}
-.sec-n{flex:none;width:44px;height:44px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:600;font-size:16px}
-.sec h3{margin:0;font-size:19px;font-weight:600;color:var(--ink);line-height:1.2}
+.sec-n{flex:none;width:36px;height:36px;border-radius:10px;background:var(--tint);color:var(--accent);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:600;font-size:14px}
+.sec h3{margin:0;font-size:17px;font-weight:600;color:var(--ink);line-height:1.2}
 .sec p{margin:2px 0 0;font-size:14px;color:var(--muted)}
 
 .perm-card{border:1.5px solid var(--line);border-radius:14px;padding:14px;background:var(--surface-2);display:flex;flex-direction:column;gap:10px}
@@ -370,9 +369,9 @@ function slug(s){return norm(s).replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'')|
 var PERFIS=[['adm','Administrador','dono ou gestor, vê tudo'],['ger','Gerente','acompanha e aprova'],['ven','Vendedor','atende e registra vendas'],['atd','Atendente','cadastra e acompanha'],['fin','Financeiro','contas e valores'],['ope','Equipe operacional','executa o trabalho'],['cli','Cliente','acesso externo, só o dele']];
 var PERMC=[['ver','Ver'],['criar','Criar novo'],['editar','Editar'],['excluir','Excluir'],['telas','Acessar outras telas']];
 function roles(a){
-  if(a.usu_qtd==='so-eu'||a.usu_hier!=='sim')return [];
-  var r=L(a,'usu_tipos_opts').map(function(k){return labelOf(PERFIS,k)});
-  String(a.usu_tipos_outro||'').split(/[,;\n]/).forEach(function(x){x=x.trim();if(x)r.push(x)});
+  if(a.usu_hier!=='sim')return [];
+  var r=[];
+  String(a.usu_tipos||'').split(/[,;\n]/).forEach(function(x){x=x.replace(/\.+$/,'').trim();if(x)r.push(x)});
   return uniq(r);
 }
 function permSug(r){var n=norm(r);
@@ -404,9 +403,9 @@ function sugTelas(a){
   if(cads(a).length) r.push('cadastros');
   if(lines(a.fluxo_passos).length) r.push('solic');
   if(a.fluxo_status_usa==='sim') r.push('acomp');
-  if(a.usu_qtd==='externo'||a.usu_login==='misto') r.push('externa');
+  if(a.usu_login==='misto') r.push('externa');
   if(a.fluxo_hist==='sim') r.push('historico');
-  if(a.usu_qtd&&a.usu_qtd!=='so-eu') r.push('config');
+  if(has(a.usu_tipos)) r.push('config');
   return uniq(r);
 }
 function sugInd(a){
@@ -443,8 +442,8 @@ function gaps(a){
   }
   if(a.aprov==='sim'&&!has(a.aprov_quem)) add(1,'Você disse que existe aprovação, mas não definiu quem aprova.');
   if(!a.aprov) add(1,'Falta responder se existe aprovação.');
-  if(!a.usu_qtd) add(2,'Falta dizer quantas pessoas vão usar.');
-  if(a.usu_qtd&&a.usu_qtd!=='so-eu'){
+  if(!has(a.usu_tipos)) add(2,'Falta dizer quais usuários vão acessar o sistema.');
+  {
     var rs=roles(a);
     if(!a.usu_hier) add(2,'Falta dizer se terá hierarquia ou acessos diferentes por tipo de usuário.');
     else if(a.usu_hier==='sim'&&!rs.length) add(2,'Falta definir os tipos de usuário.');
@@ -507,9 +506,9 @@ function buildPrompt(a){
   P('');
 
   P('## 5. USUÁRIOS E ACESSOS');
-  kv('Quantidade',labelOf(QTD,a.usu_qtd||''));
+  kv('Tipos de usuário',a.usu_tipos);
   var rs2=roles(a);
-  if(a.usu_qtd&&a.usu_qtd!=='so-eu') P('- Hierarquia ou acessos diferentes por tipo: '+(a.usu_hier==='sim'?'sim':a.usu_hier==='nao'?'não, todos têm o mesmo acesso':'(não informado)'));
+  if(has(a.usu_tipos)) P('- Hierarquia ou acessos diferentes por tipo: '+(a.usu_hier==='sim'?'sim':a.usu_hier==='nao'?'não, todos têm o mesmo acesso':'(não informado)'));
   if(rs2.length){P('- Tipos de usuário e permissões:');rs2.forEach(function(r){var ps=PERMC.filter(function(c){return L(a,'perm').indexOf(r+'|'+c[0])>=0}).map(function(c){return c[1].toLowerCase()});var tl=val(a,'pt__'+slug(r));P('  - '+r+': '+(ps.length?ps.join(', '):'(permissões não definidas)')+(tl?'; telas: '+tl:''))})}
   kv('Regras extras de acesso',a.usu_acesso);
   kv('Login',a.usu_login?labelOf(LOGIN,a.usu_login):'');
@@ -633,24 +632,21 @@ var STEPS=[
   T('med_meta','Qual é o resultado esperado (meta)? Onde você quer chegar com esse sistema?',{ph:'Ex.: 15 minutos por pedido',nudge:function(a){return has(a.med_meta)&&!/\d/.test(a.med_meta)?'De quanto para quanto? Coloque um número, mesmo que seja uma estimativa.':''}})
  ]},
  {k:'Quem usa e o que vê',h1:'Defina quem ',h2:'usa e o que cada um acessa',title:'Usuários e acessos',why:'Cada pessoa vê o que precisa, e só isso.',blocks:[
-  {type:'sec',id:'sec_u',num:'1',title:'Quem vai usar',desc:'Quantas pessoas vão usar e quais tipos de usuário existem.'},
-  {type:'select',id:'usu_qtd',label:'Quantas pessoas vão usar?',options:QTD},
-  R('usu_hier','Terá hierarquia ou acessos diferentes por tipo de usuário?',[['sim','Sim, cada tipo acessa coisas diferentes'],['nao','Não, todos têm o mesmo acesso']],{hint:'Ex.: um administrador que vê tudo e outros perfis com acesso limitado.',show:function(a){return a.usu_qtd&&a.usu_qtd!=='so-eu'}}),
-  C('usu_tipos_opts','Quais tipos de usuário vão existir?',PERFIS,{hint:'Marque os que se aplicam.',show:function(a){return a.usu_hier==='sim'}}),
-  T('usu_tipos_outro','Outros tipos (separe por vírgula)',{opt:1,ph:'Ex.: Estoquista, Supervisor',show:function(a){return a.usu_hier==='sim'}}),
-  {type:'sec',id:'sec_a',num:'2',title:'Regras de acesso',desc:'O que cada tipo de usuário pode ver, criar, editar e excluir.',show:function(a){return !!a.usu_hier&&a.usu_qtd!=='so-eu'}},
+  {type:'sec',id:'sec_u',num:'1',title:'Quem vai usar',desc:'Quais usuários vão acessar o sistema?'},
+  A('usu_tipos','Tipos de usuários',{hint:'Escreva quem vai acessar o sistema, separando por vírgula.',ph:'Ex.: Administrador, Vendedor, Financeiro, Cliente...',rows:3}),
+  R('usu_hier','Cada tipo vai acessar coisas diferentes?',[['sim','Sim, cada tipo tem seu acesso'],['nao','Não, todos têm o mesmo acesso']],{hint:'Ex.: um administrador que vê tudo e outros perfis com acesso limitado.'}),
+  {type:'sec',id:'sec_a',num:'2',title:'Regras de acesso',desc:'O que cada tipo de usuário pode ver, criar, editar e excluir.',show:function(a){return a.usu_hier==='sim'&&roles(a).length>0}},
   D('perm',permHTML,function(a){return roles(a).join('|')},{show:function(a){return a.usu_hier==='sim'}}),
-  A('usu_acesso','Mais alguma regra de acesso?',{opt:1,hint:'Ex.: cada pessoa só vê os próprios registros.',ph:'Ex.: Vendedor vê só os próprios pedidos; cliente vê apenas o seu pedido.',rows:3,show:function(a){return !!a.usu_hier&&a.usu_qtd!=='so-eu'}}),
+  A('usu_acesso','Mais alguma regra de acesso?',{opt:1,hint:'Ex.: cada pessoa só vê os próprios registros.',ph:'Ex.: Vendedor vê só os próprios pedidos; cliente vê apenas o seu pedido.',rows:3,show:function(a){return a.usu_hier==='sim'&&roles(a).length>0}}),
   {type:'sec',id:'sec_l',num:'3',title:'Entrada no sistema',desc:'Como as pessoas vão entrar.'},
   {type:'select',id:'usu_login',label:'Como será o login?',options:LOGIN},
   D('usu_notes',function(a){
     var t=[];
-    if(a.usu_qtd==='so-eu') t.push('Como é só você, dá para pular perfis de acesso.');
     if(a.usu_login==='simples') t.push('No login simples, a planilha guarda usuário, senha e ativo/inativo (a senha deve ficar com hash). Serve bem para equipes pequenas, mas não para dado muito sensível.');
     if(a.usu_login==='misto') t.push('A parte interna pede login. As páginas externas abrem por link, sem login.');
     if(a.usu_login==='nenhum') t.push('Sem login, qualquer pessoa com o link entra. Evite guardar dado sensível.');
     return t.map(function(x){return '<p class="note">'+esc(x)+'</p>'}).join('');
-  },function(a){return (a.usu_qtd==='so-eu'?'1':'0')+(a.usu_login||'')})
+  },function(a){return (a.usu_login||'')})
  ]},
  {k:'Dados sem digitar duas vezes',h1:'Organize ',h2:'cadastros e dados',title:'Cadastros e dados',why:'Digite o dado uma vez só, em um lugar só.',blocks:[
   A('cad_lista','Quais cadastros o sistema precisa ter?',{hint:'Um por linha ou separados por vírgula. Ex.: Clientes, Produtos, Pedidos.',rows:3}),
@@ -726,7 +722,7 @@ function reviewHTML(a){
    ['Ideia',short(a.ideia,140)],['Melhoria esperada',short(a.problema,140)],['Maior incômodo hoje',short(a.hoje_problema,140)],
    ['De → para',(has(a.med_hoje)||has(a.med_meta))?(val(a,'med_hoje')||'?')+' → '+(val(a,'med_meta')||'?'):''],
    ['Fluxo',lines(a.fluxo_passos).length?lines(a.fluxo_passos).length+' passos':''],
-   ['Usuários',a.usu_qtd?labelOf(QTD,a.usu_qtd)+(a.usu_login?' · '+labelOf(LOGIN,a.usu_login):''):''],
+   ['Usuários',has(a.usu_tipos)?short(a.usu_tipos,40)+(a.usu_login?' · '+labelOf(LOGIN,a.usu_login):''):''],
    ['Cadastros',cc.join(', ')],['Telas',tl.join(', ')],
    ['Limites invioláveis',(L(a,'nunca').length+lines(a.nunca_outro).length)?(L(a,'nunca').length+lines(a.nunca_outro).length)+' definidos':''],
    ['Pronto quando',short(frase(a),160)]
