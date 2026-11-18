@@ -8,7 +8,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23013D8F'/%3E%3Ctext x='32' y='42' font-family='Arial' font-size='30' font-weight='700' text-anchor='middle' fill='%23FFFFFF'%3EK%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 /* Conceito: trilho de etapas à esquerda e cartão de trabalho à direita. No celular o trilho vira uma barra de progresso. Tema claro fixo, de propósito, para não cansar a vista. */
 :root{
@@ -17,7 +17,7 @@
   --focus:#013D8F;
   --mark-bg:#013D8F; --mark-ink:#FFFFFF;
   --warn-bg:#FFF1E6; --warn-ink:#6B2A00; --ok:#0B6B4C; --stop:#9B1C31;
-  --font-display:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;
+  --font-display:'Poppins','Segoe UI',system-ui,sans-serif;
   --font-body:'Figtree','Segoe UI',system-ui,sans-serif;
   --font-mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
   --r:10px; --r-lg:16px;
@@ -223,8 +223,8 @@ body[data-petal="azul"]{--pc:#BFD2EE}
 .kicker{font-weight:800;letter-spacing:.14em;color:var(--accent)}
 h2 .hl{color:var(--accent)}
 h2{color:var(--ink);font-size:clamp(26px,3.6vw,34px);line-height:1.12}
-.stage-head{padding:22px 28px 22px;gap:6px}
-.why{font-size:15px;max-width:70ch}
+.stage-head{padding:18px 28px 18px;gap:4px}
+.why{font-size:15px;max-width:90ch}
 .mprog{display:none!important}
 @media (max-width:640px){.stage-head{padding:16px 18px 18px}}
 
@@ -247,6 +247,18 @@ h2{color:var(--ink);font-size:clamp(26px,3.6vw,34px);line-height:1.12}
 .opt input[type=checkbox]{width:18px;height:18px;border-radius:5px;margin-top:0}
 .opts:has(input[type=checkbox]){grid-template-columns:repeat(auto-fill,minmax(min(100%,200px),1fr));gap:2px 6px}
 .perm-opts{grid-template-columns:repeat(auto-fill,minmax(min(100%,150px),1fr))}
+
+h1,h2,h3{letter-spacing:0}
+h1{font-weight:700}
+h2{font-weight:700;font-size:clamp(18px,2.2vw,22px);line-height:1.25;letter-spacing:0}
+h3,.sec h3{font-weight:600}
+.brand-sub,.why,.sec p,.kicker,.topbar .lbl,.perm-t{font-family:var(--font-display)}
+.brand-sub{font-size:13.5px}
+.why{font-size:14.5px}
+.sec p{font-size:13.5px}
+.kicker,.topbar .lbl{font-weight:600;letter-spacing:.1em;font-size:11.5px}
+.perm-t{font-weight:600}
+.stage-head .why{max-width:90ch}
 [hidden]{display:none!important}
 body{margin:0}
 img{max-width:100%}
@@ -262,7 +274,7 @@ img{max-width:100%}
       <div class="mark" aria-hidden="true">KMY</div>
       <div>
         <h1>Método KMY</h1>
-        <p class="brand-sub">Gerador de Prompt · da ideia ao resultado</p>
+        <p class="brand-sub">Gerador de Prompt</p>
       </div>
     </div>
     <p class="save-note">Suas respostas ficam salvas só neste navegador.</p>
@@ -773,7 +785,7 @@ function renderStage(){
   var st=STEPS[S.step];var last=S.step===STEPS.length-1;
   $('#topbar').innerHTML=topbar(Math.round(((S.step+1)/STEPS.length)*100),'Etapa '+(S.step+1)+' de '+STEPS.length);
   stage.innerHTML='<div class="t-'+TINTS[S.step%5]+'">'+
-    '<div class="stage-head"><p class="kicker">'+esc(st.k)+'</p><h2 id="stepTitle" tabindex="-1">'+esc(st.h1)+'<span class="hl">'+esc(st.h2)+'</span></h2><p class="why">'+esc(st.why)+'</p></div>'+
+    '<div class="stage-head"><h2 id="stepTitle" tabindex="-1">'+esc(st.h1)+'<span class="hl">'+esc(st.h2)+'</span></h2><p class="why">'+esc(st.why)+'</p></div>'+
     '<div class="blocks">'+st.blocks.map(blockHTML).join('')+'</div>'+
     '<div class="nav">'+(S.step>0?'<button type="button" class="btn btn-ghost" data-act="back">Voltar</button>':'<span></span>')+
     (last?'<button type="button" class="btn btn-primary" data-act="generate">Gerar meu prompt</button>':'<button type="button" class="btn btn-primary" data-act="next">Próxima etapa</button>')+'</div></div>';
@@ -797,7 +809,7 @@ function renderResult(){
   var txt=buildPrompt(S.a);var g=gaps(S.a);
   var words=txt.trim().split(/\s+/).length;
   $('#topbar').innerHTML=topbar(100,'Prompt pronto');
-  stage.innerHTML='<div class="t-mint"><div class="stage-head"><p class="kicker">Pronto para usar</p><h2 id="stepTitle" tabindex="-1">Seu prompt está <span class="hl">pronto</span></h2><p class="why">Copie e cole na IA que você vai usar para construir o sistema, como Claude, ChatGPT ou outra.</p></div>'+
+  stage.innerHTML='<div class="t-mint"><div class="stage-head"><h2 id="stepTitle" tabindex="-1">Seu prompt está <span class="hl">pronto</span></h2><p class="why">Copie e cole na IA que você vai usar para construir o sistema, como Claude, ChatGPT ou outra.</p></div>'+
    '<div class="blocks"><div class="q"><label class="lab" for="promptOut">Prompt completo</label><textarea class="out" id="promptOut" readonly></textarea></div>'+
    '<div class="actions"><button type="button" class="btn btn-primary" data-act="copy">Copiar prompt</button><button type="button" class="btn btn-ghost" data-act="download">Baixar .txt</button><button type="button" class="btn btn-ghost" data-act="edit">Voltar e editar</button></div>'+
    '<p class="meta">'+words+' palavras · '+g.length+(g.length===1?' ponto em aberto':' pontos em aberto')+(g.length?' (a IA vai perguntar sobre eles antes de construir)':'')+'</p></div></div>';
