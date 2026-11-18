@@ -230,6 +230,7 @@ h2{color:var(--ink);font-size:clamp(26px,3.6vw,34px);line-height:1.12}
 
 .sec{display:flex;gap:12px;align-items:center;padding:2px 0 6px;position:relative}
 .sec[hidden]{display:none}
+.howto{margin:0;padding:0 0 0 22px;display:flex;flex-direction:column;gap:8px;color:var(--ink);font-size:15px;line-height:1.5}
 .sec:not(:first-child){margin-top:14px}
 .sec-n{flex:none;width:36px;height:36px;border-radius:10px;background:var(--tint);color:var(--accent);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:600;font-size:14px}
 .sec h3{margin:0;font-size:17px;font-weight:600;color:var(--ink);line-height:1.2}
@@ -334,7 +335,8 @@ var MEDSIS=[
 var TELAS=[
  ['login','Login'],['inicial','Tela inicial'],['dashboard','Dashboard'],['cadastros','Cadastros'],
  ['solic','Solicitações e registros'],['acomp','Acompanhamento'],['externa','Página externa por link'],
- ['config','Configurações'],['relatorios','Relatórios'],['historico','Histórico']
+ ['config','Configurações'],['relatorios','Relatórios'],['historico','Histórico'],
+ ['pend','Pendências e alertas'],['melhoria','Resultado da meta (antes e depois)']
 ];
 var NUNCA=[
  ['apagar','Apagar um registro sem pedir confirmação','Tentar apagar um registro e ver o pedido de confirmação'],
@@ -361,7 +363,9 @@ var ENTREGA=[
  ['explicar','Explicar antes de construir','A IA resume o que entendeu e pergunta o que faltar antes de escrever código'],
  ['etapas','Construir por etapas','Uma etapa por vez, e só avança quando eu disser ok'],
  ['completos','Arquivos completos','Código inteiro de cada arquivo, pronto para copiar e colar'],
- ['testes','Explicar como testar','Passo a passo para conferir cada etapa e o critério de pronto']
+ ['testes','Explicar como testar','Passo a passo para conferir cada etapa e o critério de pronto'],
+ ['sheets','Usar Google Sheets','Dados guardados em planilha, com Apps Script, sem custo'],
+ ['github','Publicar no GitHub','Passo a passo para colocar o sistema no ar com o GitHub Pages']
 ];
 
 /* ---------- regras de raciocínio ---------- */
@@ -410,6 +414,8 @@ function sugTelas(a){
   if(loginKind(a)==='misto') r.push('externa');
   if(a.fluxo_hist==='sim') r.push('historico');
   if(has(a.usu_tipos)) r.push('config');
+  if(has(a.automat)) r.push('pend');
+  if(has(a.med_hoje)&&has(a.med_meta)) r.push('melhoria');
   return uniq(r);
 }
 function sugInd(a){
@@ -458,11 +464,11 @@ function gaps(a){
   var tl=L(a,'telas');
   if(!tl.length) add(4,'Nenhuma tela foi marcada.');
   if(tl.indexOf('login')>=0&&loginKind(a)==='nenhum') add(4,'Você marcou a tela de Login, mas escolheu não ter login.');
-  if(tl.indexOf('dashboard')>=0&&!has(a.dash_ind)) add(4,'O dashboard está sem indicadores.');
-  if(!L(a,'nunca').length&&!has(a.nunca_outro)) add(5,'Nenhum limite inviolável foi definido. O que o sistema nunca pode fazer?');
-  L(a,'nunca').forEach(function(k){if(!has(a['dano__'+k])) add(5,'Falta o prejuízo de "'+labelOf(NUNCA,k).toLowerCase()+'".')});
-  if(!has(a.regras_neg)&&!has(a.travas)) add(5,'Nenhuma regra de negócio ou trava foi descrita.');
-  if(!L(a,'testes').length&&!nuncaTestes(a).length) add(5,'Nenhum teste foi marcado.');
+  if(tl.indexOf('dashboard')>=0&&!has(a.dash_ind)) add(5,'O dashboard está sem indicadores.');
+  if(!L(a,'nunca').length&&!has(a.nunca_outro)) add(6,'Nenhum limite inviolável foi definido. O que o sistema nunca pode fazer?');
+  L(a,'nunca').forEach(function(k){if(!has(a['dano__'+k])) add(6,'Falta o prejuízo de "'+labelOf(NUNCA,k).toLowerCase()+'".')});
+  if(!has(a.regras_neg)&&!has(a.travas)) add(6,'Nenhuma regra de negócio ou trava foi descrita.');
+  if(!L(a,'testes').length&&!nuncaTestes(a).length) add(6,'Nenhum teste foi marcado.');
   return g;
 }
 
@@ -566,13 +572,15 @@ function buildPrompt(a){
   if(ent.indexOf('etapas')>=0) P('- Construa por etapas pequenas: planilha, Apps Script, login e acessos, cadastros, fluxo, dashboard, regras e limites. Ao final de cada etapa, pare e espere meu "ok".');
   if(ent.indexOf('completos')>=0) P('- Entregue arquivos completos, nunca trechos soltos, dizendo o nome de cada arquivo e onde colar.');
   if(ent.indexOf('testes')>=0) P('- Ao final de cada etapa, explique passo a passo como testar e só avance se o teste passar.');
+  if(ent.indexOf('sheets')>=0) P('- Use Google Sheets como banco de dados e Apps Script como parte de servidor, sem nenhum custo.');
+  if(ent.indexOf('github')>=0) P('- Ao final, ensine passo a passo a publicar o sistema no GitHub Pages, sem custo.');
   if(has(a.obs)){P('- Observações finais:');lines(a.obs).forEach(function(x){P('  - '+x)})}
   return o.join('\n');
 }
 
 /* ---------- estado ---------- */
 var S={step:0,max:0,view:'step',a:{}};
-function defaults(){return {entrega:['explicar','etapas','completos','testes']}}
+function defaults(){return {entrega:['explicar','etapas','completos','testes','sheets','github']}}
 function load(){
   try{
     var r=localStorage.getItem(KEY);
@@ -598,14 +606,14 @@ var D=function(id,dyn,sig,o){return Object.assign({type:'dyn',id:id,dyn:dyn,sig:
 var vagueIdeia=function(a){return isVague(a.ideia)};
 var STEPS=[
  {k:'Da ideia ao funcionamento',h1:'Conte a sua ',h2:'ideia e como é hoje',title:'Ideia e situação atual',why:'Conte o que você quer criar e como as coisas funcionam hoje, do seu jeito, sem termos técnicos.',blocks:[
-  {type:'sec',id:'sec1',num:'1',title:'Sobre o sistema',desc:'Conte o que você quer criar e o que vai ficar melhor com isso.'},
+  {type:'sec',id:'sec1',num:'1',title:'Sobre o sistema',desc:'Conte o que você quer criar ou o que você deseja melhorar.'},
   T('nome','Nome do sistema',{opt:1,ph:'Ex.: Controle de Pedidos'}),
   A('ideia','Qual é a sua ideia, em uma frase?',{hint:'Escreva do jeito que você explicaria para um amigo.',nudge:function(a){return vagueIdeia(a)?'Ficou curtinho. Responda a pergunta logo abaixo para a ideia ficar concreta.':''}}),
   A('ideia_ex','Me conta um exemplo real de quando isso aconteceu.',{show:function(a){return vagueIdeia(a)||has(a.ideia_ex)}}),
   A('problema','O que vai funcionar melhor com o sistema?',{hint:'Mais rápido, mais organizado, sem retrabalho, com tudo num lugar só… conte o que você imagina.'}),
   {type:'sec',id:'sec2',num:'2',title:'Como funciona hoje',desc:'Conte como as coisas são feitas agora e o que mais incomoda.'},
   A('hoje_como','Como o processo é realizado hoje?',{hint:'Conte do começo ao fim, do jeito que acontece: onde anota, quem faz cada parte, com o que (planilha, papel, WhatsApp). Se ainda não existe, conte como as pessoas se viram.',rows:5}),
-  A('hoje_problema','O que mais incomoda hoje?',{hint:'Qual é o maior problema? O que acontece diferente do que deveria? Ex.: informação que se perde, retrabalho, demora, o mesmo erro se repetindo.',rows:4})
+  A('hoje_problema','O que mais incomoda hoje?',{hint:'Qual é o maior problema? O que acontece diferente do que deveria? Ex.: informação que se perde, retrabalho, demora, desperdícios (de tempo, material ou dinheiro), o mesmo erro se repetindo.',rows:4})
  ]},
  {k:'Do funcionamento ao resultado',h1:'Defina como o sistema ',h2:'deve funcionar',title:'Funcionamento e resultado',why:'Conte o caminho e depois como saber se deu certo.',blocks:[
   {type:'sec',id:'sec_f',num:'1',title:'O caminho, do começo ao fim',desc:'Como tudo começa, o que acontece no meio e como termina.'},
@@ -660,14 +668,18 @@ var STEPS=[
   A('cad_listas','Existem listas de opções? Quais?',{hint:'Ex.: Status (Novo, Em andamento, Concluído); Forma de pagamento.',rows:2,opt:1}),
   T('cad_id','Existe algum ID que liga as informações?',{hint:'Ex.: o número do pedido liga cliente, produto e pagamento.'})
  ]},
- {k:'O que aparece na tela',h1:'Escolha ',h2:'as telas e o dashboard',title:'Telas e dashboard',why:'As telas nascem do fluxo e os indicadores da sua meta.',blocks:[
+ {k:'O que aparece na tela',h1:'Escolha ',h2:'as telas do sistema',title:'Telas do sistema',why:'As telas nascem do fluxo que você descreveu.',blocks:[
+  {type:'sec',id:'sec_t1',num:'1',title:'Telas do sistema',desc:'Marque as principais telas que fazem sentido para o seu sistema.'},
   D('telas_sug',function(a){
     var m=sugTelas(a).filter(function(k){return L(a,'telas').indexOf(k)<0});if(!m.length)return '';
     return '<p class="sugg">Pelo que você respondeu, faz sentido ter: <b>'+m.map(function(k){return esc(labelOf(TELAS,k))}).join(', ')+'</b>.</p><button type="button" class="btn btn-ghost sm" data-act="sug-telas">Marcar as sugeridas</button>';
   },function(a){return sugTelas(a).filter(function(k){return L(a,'telas').indexOf(k)<0}).join('|')}),
   C('telas','Marque as telas do sistema',TELAS.map(function(t){return [t[0],t[1]]})),
-  T('telas_outras','Outras telas necessárias',{opt:1}),
-  A('tela_inicial','O que deve aparecer na tela inicial?',{rows:2}),
+  A('telas_outras','Outras telas necessárias',{opt:1,rows:3,ph:'Descreva telas específicas do seu processo.'}),
+  A('tela_inicial','O que deve aparecer na tela inicial?',{rows:3,ph:'Ex.: atalhos, pendências, indicadores rápidos...'})
+ ]},
+ {k:'O que você acompanha',h1:'Monte ',h2:'o dashboard',title:'Dashboard',why:'Os indicadores nascem da sua meta.',blocks:[
+  {type:'sec',id:'sec_d1',num:'1',title:'Indicadores',desc:'O que você precisa enxergar de relance.'},
   A('dash_ind','Indicadores do dashboard',{hint:'Um por linha. Toque nas sugestões abaixo para adicionar.',rows:4}),
   D('dash_chips',function(a){
     var s=sugInd(a);if(!s.length)return '';
@@ -700,8 +712,10 @@ var STEPS=[
   },function(a){return nuncaTestes(a).join('|')})
  ]},
  {k:'Conferir e gerar',h1:'Revise e ',h2:'gere o seu prompt',title:'Entrega e revisão',why:'Última conferência antes de gerar o prompt.',blocks:[
-  C('entrega','Como a IA deve conduzir a construção?',ENTREGA),
-  A('obs','Observações finais',{opt:1,rows:3}),
+  {type:'sec',id:'sec_e1',num:'1',title:'Como você quer receber o projeto?',desc:'Marque como a IA deve conduzir a construção do sistema.'},
+  C('entrega','Marque o que se aplica',ENTREGA),
+  A('obs','Observações finais',{opt:1,rows:4,ph:'Inclua qualquer detalhe que não apareceu nas perguntas anteriores.'}),
+  {type:'sec',id:'sec_e2',num:'2',title:'Revise antes de gerar',desc:'Confira o que eu entendi. Os pontos em aberto não impedem de gerar.'},
   D('review',function(a){return reviewHTML(a)},function(a){return JSON.stringify(a)},{cls:'review-wrap'})
  ]}
 ];
@@ -766,11 +780,11 @@ function renderRail(){
     if(!cur&&i<=S.max){status=''}
     var mark=(!cur&&i<=S.max&&!by[i])?'✓':String(i+1);
     return '<li><button type="button" class="rail-item t-'+TINTS[i%5]+'" data-act="goto" data-s="'+i+'"'+(cur?' aria-current="step"':'')+'><span class="num" aria-hidden="true">'+mark+'</span><span class="rt"><span class="rn">'+(i+1)+'. '+esc(st.title)+'</span>'+status+'</span></button></li>';
-  }).join('');
+  }).join('')+(function(){var n=STEPS.length,cur=S.view==='result';return '<li><button type="button" class="rail-item t-'+TINTS[n%5]+'" data-act="goto" data-s="'+n+'"'+(cur?' aria-current="step"':'')+'><span class="num" aria-hidden="true">'+(n+1)+'</span><span class="rt"><span class="rn">'+(n+1)+'. Prompt pronto</span></span></button></li>'})();
 }
 function renderProgress(){
-  var pct=S.view==='result'?100:Math.round(((S.step+1)/STEPS.length)*100);
-  var t=S.view==='result'?'Prompt pronto':'Etapa '+(S.step+1)+' de '+STEPS.length+' · '+STEPS[S.step].title;
+  var TOT=STEPS.length+1;var pct=S.view==='result'?100:Math.round(((S.step+1)/TOT)*100);
+  var t=S.view==='result'?'Etapa '+TOT+' de '+TOT+' · Prompt pronto':'Etapa '+(S.step+1)+' de '+TOT+' · '+STEPS[S.step].title;
   $('#mprog').innerHTML='<p>'+esc(t)+'</p><div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'" aria-label="Progresso"><i style="width:'+pct+'%"></i></div>';
 }
 
@@ -780,7 +794,7 @@ function topbar(pct,txt){
 function renderStage(){
   if(S.view==='result'){renderResult();return}
   var st=STEPS[S.step];var last=S.step===STEPS.length-1;
-  $('#topbar').innerHTML=topbar(Math.round(((S.step+1)/STEPS.length)*100),'Etapa '+(S.step+1)+' de '+STEPS.length);
+  $('#topbar').innerHTML=topbar(Math.round(((S.step+1)/(STEPS.length+1))*100),'Etapa '+(S.step+1)+' de '+(STEPS.length+1));
   stage.innerHTML='<div class="t-'+TINTS[S.step%5]+'">'+
     '<div class="stage-head"><h2 id="stepTitle" tabindex="-1">'+esc(st.h1)+'<span class="hl">'+esc(st.h2)+'</span></h2><p class="why">'+esc(st.why)+'</p></div>'+
     '<div class="blocks">'+st.blocks.map(blockHTML).join('')+'</div>'+
@@ -806,11 +820,13 @@ function refresh(){
 function renderResult(){
   var txt=buildPrompt(S.a);var g=gaps(S.a);
   var words=txt.trim().split(/\s+/).length;
-  $('#topbar').innerHTML=topbar(100,'Prompt pronto');
+  $('#topbar').innerHTML=topbar(100,'Etapa '+(STEPS.length+1)+' de '+(STEPS.length+1));
   stage.innerHTML='<div class="t-mint"><div class="stage-head"><h2 id="stepTitle" tabindex="-1">Seu prompt está <span class="hl">pronto</span></h2><p class="why">Copie e cole na IA que você vai usar para construir o sistema, como Claude, ChatGPT ou outra.</p></div>'+
-   '<div class="blocks"><div class="q"><label class="lab" for="promptOut">Prompt completo</label><textarea class="out" id="promptOut" readonly></textarea></div>'+
+   '<div class="blocks"><div class="sec"><span class="sec-n" aria-hidden="true">1</span><div><h3>Copie o seu prompt</h3><p>Ele já leva o seu método: porquê, fluxo, regras, limites e testes.</p></div></div><div class="q"><label class="lab" for="promptOut">Prompt completo</label><textarea class="out" id="promptOut" readonly></textarea></div>'+
    '<div class="actions"><button type="button" class="btn btn-primary" data-act="copy">Copiar prompt</button><button type="button" class="btn btn-ghost" data-act="download">Baixar .txt</button><button type="button" class="btn btn-ghost" data-act="edit">Voltar e editar</button></div>'+
-   '<p class="meta">'+words+' palavras · '+g.length+(g.length===1?' ponto em aberto':' pontos em aberto')+(g.length?' (a IA vai perguntar sobre eles antes de construir)':'')+'</p></div></div>';
+   '<p class="meta">'+words+' palavras · '+g.length+(g.length===1?' ponto em aberto':' pontos em aberto')+(g.length?' (a IA vai perguntar sobre eles antes de construir)':'')+'</p>'+
+   '<div class="sec"><span class="sec-n" aria-hidden="true">2</span><div><h3>Como usar</h3><p>Quatro passos para transformar o prompt em sistema.</p></div></div>'+
+   '<ol class="howto"><li>Copie o prompt e cole na IA que você usa, como Claude, ChatGPT ou outra.</li><li>Responda às perguntas que a IA fizer sobre os pontos em aberto.</li><li>Avance uma etapa por vez, testando cada uma antes de seguir.</li><li>Só dê como pronto quando todos os testes da seção de critério de pronto passarem.</li></ol></div></div>';
   $('#promptOut').value=txt;
   renderRail();renderProgress();
 }
@@ -855,7 +871,7 @@ document.addEventListener('click',function(e){
   var act=b.dataset.act;
   if(act==='next')go(S.step+1);
   else if(act==='back')go(S.step-1);
-  else if(act==='goto')go(parseInt(b.dataset.s,10)||0);
+  else if(act==='goto'){var gn=parseInt(b.dataset.s,10)||0;if(gn>=STEPS.length){S.view='result';S.max=STEPS.length-1;save();renderStage();focusTop()}else go(gn)}
   else if(act==='generate'){S.view='result';S.max=STEPS.length-1;save();renderStage();focusTop()}
   else if(act==='edit')go(STEPS.length-1);
   else if(act==='copy')copyPrompt();
