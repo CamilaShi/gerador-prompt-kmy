@@ -228,10 +228,11 @@ h2{color:var(--ink);font-size:clamp(26px,3.6vw,34px);line-height:1.12}
 .mprog{display:none!important}
 @media (max-width:640px){.stage-head{padding:16px 18px 18px}}
 
-.sec{display:flex;gap:16px;align-items:center;padding:16px 18px;background:var(--surface-2);border:1.5px solid var(--line);border-radius:14px}
-.sec:not(:first-child){margin-top:8px}
-.sec-n{flex:none;width:48px;height:48px;border-radius:14px;background:var(--tint);color:var(--accent);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:18px}
-.sec h3{margin:0;font-size:19px;font-weight:800;color:var(--ink);line-height:1.2}
+.sec{display:flex;gap:14px;align-items:center;padding:4px 0 14px;border-bottom:2px solid var(--tint);position:relative}
+.sec::after{content:"";position:absolute;left:0;bottom:-2px;width:96px;height:2px;background:var(--accent)}
+.sec:not(:first-child){margin-top:14px}
+.sec-n{flex:none;width:44px;height:44px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:600;font-size:16px}
+.sec h3{margin:0;font-size:19px;font-weight:600;color:var(--ink);line-height:1.2}
 .sec p{margin:2px 0 0;font-size:14px;color:var(--muted)}
 
 .perm-card{border:1.5px solid var(--line);border-radius:14px;padding:14px;background:var(--surface-2);display:flex;flex-direction:column;gap:10px}
@@ -599,14 +600,14 @@ var D=function(id,dyn,sig,o){return Object.assign({type:'dyn',id:id,dyn:dyn,sig:
 var vagueIdeia=function(a){return isVague(a.ideia)};
 var STEPS=[
  {k:'Da ideia ao funcionamento',h1:'Conte a sua ideia e ',h2:'como ela deve funcionar',title:'Ideia e funcionamento',why:'Imagine o sistema funcionando e conte o que vai melhorar, do seu jeito, sem termos técnicos.',blocks:[
-  {type:'sec',id:'sec1',num:'01',title:'Sobre a ideia',desc:'Conte o que você quer criar e o que vai ficar melhor com isso.'},
+  {type:'sec',id:'sec1',num:'1',title:'Sobre a ideia',desc:'Conte o que você quer criar e o que vai ficar melhor com isso.'},
   T('nome','Nome do sistema',{opt:1,ph:'Ex.: Controle de Pedidos'}),
   A('ideia','Qual é a sua ideia, em uma frase?',{hint:'Escreva do jeito que você explicaria para um amigo.',nudge:function(a){return vagueIdeia(a)?'Ficou curtinho. Responda a pergunta logo abaixo para a ideia ficar concreta.':''}}),
   A('ideia_ex','Me conta um exemplo real de quando isso aconteceu.',{show:function(a){return vagueIdeia(a)||has(a.ideia_ex)}}),
   A('problema','O que vai funcionar melhor com o sistema?',{hint:'Mais rápido, mais organizado, sem retrabalho, com tudo num lugar só… conte o que você imagina.'}),
-  {type:'sec',id:'sec2',num:'02',title:'Como funciona hoje',desc:'Se já existe, mostre como é feito e o que dá para facilitar. Se não, como as pessoas se viram.'},
+  {type:'sec',id:'sec2',num:'2',title:'Como funciona hoje',desc:'Se já existe, mostre como é feito e o que dá para facilitar. Se não, como as pessoas se viram.'},
   A('hoje_como','Esse processo existe hoje? Como é feito?',{hint:'Se existe, conte do começo ao fim: com o quê (planilha, papel, WhatsApp), quem faz e o que poderia ficar mais fácil. Se ainda não existe, diga como as pessoas se viram hoje.',rows:5}),
-  {type:'sec',id:'sec3',num:'03',title:'Como o sistema deve funcionar',desc:'Pense no caminho: como começa, o que acontece e como termina.'},
+  {type:'sec',id:'sec3',num:'3',title:'Como o sistema deve funcionar',desc:'Pense no caminho: como começa, o que acontece e como termina.'},
   A('fluxo_passos','Como deve funcionar, passo a passo?',{hint:'Um passo por linha, do primeiro ao último. Escreva do jeito que você contaria para alguém.',ph:'Ex.:\nO responsável cadastra o pedido\nA equipe executa e registra o andamento\nO gestor confere e aprova\nO cliente recebe a confirmação',rows:5}),
   D('resp',function(a){
     var ls=lines(a.fluxo_passos).slice(0,12);if(!ls.length)return '';
