@@ -603,7 +603,7 @@ var D=function(id,dyn,sig,o){return Object.assign({type:'dyn',id:id,dyn:dyn,sig:
 var vagueIdeia=function(a){return isVague(a.ideia)};
 var STEPS=[
  {k:'Da ideia ao funcionamento',h1:'Conte a sua ',h2:'ideia e como é hoje',title:'Ideia e situação atual',why:'Conte o que você quer criar e como as coisas funcionam hoje, do seu jeito, sem termos técnicos.',blocks:[
-  {type:'sec',id:'sec1',num:'1',title:'Sobre a ideia',desc:'Conte o que você quer criar e o que vai ficar melhor com isso.'},
+  {type:'sec',id:'sec1',num:'1',title:'Sobre o sistema',desc:'Conte o que você quer criar e o que vai ficar melhor com isso.'},
   T('nome','Nome do sistema',{opt:1,ph:'Ex.: Controle de Pedidos'}),
   A('ideia','Qual é a sua ideia, em uma frase?',{hint:'Escreva do jeito que você explicaria para um amigo.',nudge:function(a){return vagueIdeia(a)?'Ficou curtinho. Responda a pergunta logo abaixo para a ideia ficar concreta.':''}}),
   A('ideia_ex','Me conta um exemplo real de quando isso aconteceu.',{show:function(a){return vagueIdeia(a)||has(a.ideia_ex)}}),
@@ -612,9 +612,9 @@ var STEPS=[
   A('hoje_como','Como o processo é realizado hoje?',{hint:'Conte do começo ao fim, do jeito que acontece: onde anota, quem faz cada parte, com o que (planilha, papel, WhatsApp). Se ainda não existe, conte como as pessoas se viram.',rows:5}),
   A('hoje_problema','O que mais incomoda hoje?',{hint:'Qual é o maior problema? O que acontece diferente do que deveria? Ex.: informação que se perde, retrabalho, demora, o mesmo erro se repetindo.',rows:4})
  ]},
- {k:'Do funcionamento ao resultado',h1:'Defina como o sistema ',h2:'funciona e como medir',title:'Funcionamento e resultado',why:'Primeiro o caminho do começo ao fim, depois como saber se deu certo.',blocks:[
-  {type:'sec',id:'sec_f',num:'1',title:'Como o sistema deve funcionar',desc:'Pense no caminho: como começa, o que acontece e como termina.'},
-  A('fluxo_passos','Como deve funcionar, passo a passo?',{hint:'Um passo por linha, do primeiro ao último. Escreva do jeito que você contaria para alguém.',ph:'Ex.:\nO responsável cadastra o pedido\nA equipe executa e registra o andamento\nO gestor confere e aprova\nO cliente recebe a confirmação',rows:5}),
+ {k:'Do funcionamento ao resultado',h1:'Defina como o sistema ',h2:'deve funcionar',title:'Funcionamento e resultado',why:'Conte o caminho e depois como saber se deu certo.',blocks:[
+  {type:'sec',id:'sec_f',num:'1',title:'O caminho, do começo ao fim',desc:'Como tudo começa, o que acontece no meio e como termina.'},
+  A('fluxo_passos','Quais são os passos, um por um?',{hint:'Um passo por linha, do primeiro ao último. Escreva do jeito que você contaria para alguém.',ph:'Ex.:\nO responsável cadastra o pedido\nA equipe executa e registra o andamento\nO gestor confere e aprova\nO cliente recebe a confirmação',rows:5}),
   D('resp',function(a){
     var ls=lines(a.fluxo_passos).slice(0,12);if(!ls.length)return '';
     return '<p class="lab">Quem faz cada passo?</p><div class="stack">'+ls.map(function(l,i){
