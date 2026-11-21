@@ -233,6 +233,20 @@ h2{color:var(--ink);font-size:clamp(26px,3.6vw,34px);line-height:1.12}
 .flow{margin-bottom:12px;display:flex;justify-content:center;background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px 10px;overflow-x:auto}
 .flow svg{max-width:100%;height:auto}
 .flow+.actions,.flow+.meta+.actions{margin-top:12px}
+#tick{position:fixed;inset:0;display:grid;place-items:center;pointer-events:none;z-index:60;opacity:0}
+#tick.play{animation:tkfade 1.6s ease-out forwards}
+.tk-dot{width:84px;height:84px;border-radius:50%;background:var(--accent);display:grid;place-items:center;position:relative;box-shadow:0 10px 30px rgba(1,61,143,.28);transform:scale(0)}
+.tk-dot svg{width:44px;height:44px;fill:none;stroke:#fff;stroke-width:6;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:50;stroke-dashoffset:50}
+.tk-wave{position:absolute;inset:0;border-radius:50%;border:2px solid var(--accent);opacity:0}
+#tick.play .tk-dot{animation:tkgrow .45s cubic-bezier(.2,1.4,.4,1) forwards}
+#tick.play .tk-dot svg{animation:tkdraw .35s .3s ease-out forwards}
+#tick.play .tk-wave{animation:tkwave 1s .35s ease-out forwards}
+#tick.play .tk-wave+.tk-wave{animation-delay:.55s}
+@keyframes tkgrow{to{transform:scale(1)}}
+@keyframes tkdraw{to{stroke-dashoffset:0}}
+@keyframes tkwave{0%{opacity:.5;transform:scale(1)}100%{opacity:0;transform:scale(2.1)}}
+@keyframes tkfade{0%{opacity:1}70%{opacity:1}100%{opacity:0}}
+@media (prefers-reduced-motion: reduce){#tick.play .tk-dot{animation:none;transform:none}#tick.play .tk-dot svg{animation:none;stroke-dashoffset:0}.tk-wave{display:none}#tick.play{animation:tkfade 1.2s ease-out forwards}}
 .howto{margin:0;padding:0 0 0 22px;display:flex;flex-direction:column;gap:8px;color:var(--ink);font-size:15px;line-height:1.5}
 .sec:not(:first-child){margin-top:14px}
 .sec-n{flex:none;width:36px;height:36px;border-radius:10px;background:var(--tint);color:var(--accent);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:600;font-size:14px}
@@ -251,11 +265,11 @@ h2{color:var(--ink);font-size:clamp(26px,3.6vw,34px);line-height:1.12}
 .opt:has(input[type=checkbox]) small{font-size:12.5px}
 .opt input[type=checkbox]{width:18px;height:18px;border-radius:5px;margin-top:0}
 .opts:has(input[type=checkbox]){grid-template-columns:repeat(auto-fill,minmax(min(100%,200px),1fr));gap:2px 6px}
-.cards .opts:has(input[type=checkbox]){grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px}
-.cards .opt:has(input[type=checkbox]){background:#fff;border:1px solid #E6E8EE;border-radius:16px;padding:14px 18px;gap:16px;align-items:center;box-shadow:none}
-.cards .opt:has(input[type=checkbox]):hover{background:#FAFBFD}
-.cards .opt:has(input[type=checkbox]:checked){background:#fff;border-color:#E6E8EE}
-.cards .opt:has(input[type=checkbox]) b{font-size:15.5px;font-weight:400;color:var(--ink)}
+.cards .opts:has(input[type=checkbox]){grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 10px}
+.cards .opt:has(input[type=checkbox]){background:#F6F8FB;border:0;border-radius:16px;padding:12px 18px;gap:14px;align-items:center;box-shadow:none}
+.cards .opt:has(input[type=checkbox]):hover{background:#EEF2F8}
+.cards .opt:has(input[type=checkbox]:checked){background:#F6F8FB;border:0}
+.cards .opt:has(input[type=checkbox]) b{font-size:14.5px;font-weight:400;color:var(--ink)}
 .cards .opt small{display:none}
 .cards .lab{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .cards .opt input[type=checkbox]{width:20px;height:20px;border:1.5px solid #6B7280;border-radius:5px;background:#fff}
@@ -310,6 +324,7 @@ img{max-width:100%}
     <p>Se você limpar os dados do navegador, as respostas salvas somem. Para guardar, copie o prompt no final.</p>
   </footer>
 </div>
+<div id="tick" aria-hidden="true"><div class="tk-dot"><span class="tk-wave"></span><span class="tk-wave"></span><svg viewBox="0 0 48 48"><path d="M12 25l9 9 16-18"/></svg></div></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -500,7 +515,7 @@ function buildPrompt(a){
 
   P('## 1. IDEIA E PORQUÊ');
   kv('Nome do sistema',nome);
-  kv('Ideia',a.ideia);kv('Exemplo real',a.ideia_ex);kv('O que deve melhorar',a.problema);
+  kv('Ideia',a.ideia);kv('Exemplo real',a.ideia_ex);kv('Como o sistema vai ajudar e quem será ajudado',a.problema);
   P('');
 
   P('## 2. SITUAÇÃO ATUAL');
@@ -622,10 +637,10 @@ var vagueIdeia=function(a){return isVague(a.ideia)};
 var STEPS=[
  {k:'Da ideia ao funcionamento',h1:'Conte a sua ',h2:'ideia e como é hoje',title:'Ideia e situação atual',why:'Conte o que você quer criar e como as coisas funcionam hoje, do seu jeito, sem termos técnicos.',blocks:[
   {type:'sec',id:'sec1',num:'1',title:'Sobre o sistema',desc:'Conte o que você quer criar ou o que você deseja melhorar.'},
-  T('nome','Nome do sistema',{opt:1,ph:'Ex.: Controle de Pedidos'}),
+  T('nome','Nome do sistema',{opt:1,ph:'Ex.: Controle de Vendas, Check list inteligente, Gerador de contratos, Roda da Vida...'}),
   A('ideia','Qual é a sua ideia, em uma frase?',{hint:'Escreva do jeito que você explicaria para um amigo.',nudge:function(a){return vagueIdeia(a)?'Ficou curtinho. Responda a pergunta logo abaixo para a ideia ficar concreta.':''}}),
   A('ideia_ex','Me conta um exemplo real de quando isso aconteceu.',{show:function(a){return vagueIdeia(a)||has(a.ideia_ex)}}),
-  A('problema','O que vai funcionar melhor com o sistema?',{hint:'Mais rápido, mais organizado, sem retrabalho, com tudo num lugar só… conte o que você imagina.'}),
+  A('problema','Como o sistema vai ajudar, e quem vai ser ajudado?',{hint:'Conte o que vai ficar mais fácil, mais rápido ou mais organizado, e para quem: você, a equipe, os clientes...',ph:'Ex.: A equipe deixa de anotar no caderno e o cliente acompanha o pedido sem precisar ligar.'}),
   {type:'sec',id:'sec2',num:'2',title:'Como funciona hoje',desc:'Conte como as coisas são feitas agora e o que mais incomoda.'},
   A('hoje_como','Como o processo é realizado hoje?',{hint:'Conte do começo ao fim, do jeito que acontece: onde anota, quem faz cada parte, com o que (planilha, papel, WhatsApp). Se ainda não existe, conte como as pessoas se viram.',rows:5}),
   A('hoje_problema','O que mais incomoda hoje?',{hint:'Qual é o maior problema? O que acontece diferente do que deveria? Ex.: informação que se perde, retrabalho, demora, desperdícios (de tempo, material ou dinheiro), o mesmo erro se repetindo.',rows:4})
@@ -695,12 +710,12 @@ var STEPS=[
  ]},
  {k:'O que você acompanha',h1:'Monte ',h2:'o dashboard',title:'Dashboard',why:'Os indicadores nascem da sua meta.',blocks:[
   {type:'sec',id:'sec_d1',num:'1',title:'Indicadores',desc:'O que você precisa enxergar de relance.'},
-  A('dash_ind','Indicadores do dashboard',{hint:'Um por linha. Toque nas sugestões abaixo para adicionar.',rows:4}),
+  A('dash_ind','Indicadores do dashboard',{hint:'Um por linha. Escreva o que você quer enxergar de relance, como total vendido, pedidos em aberto ou tempo médio de atendimento.',rows:4}),
   D('dash_chips',function(a){
     var s=sugInd(a);if(!s.length)return '';
     return '<p class="sub">Sugestões a partir das suas respostas:</p><div class="chips">'+s.map(function(x){return '<button type="button" class="chip" data-act="chip" data-text="'+esc(x)+'">+ '+esc(x)+'</button>'}).join('')+'</div>';
   },function(a){return sugInd(a).join('|')}),
-  T('dash_filtros','Filtros necessários',{ph:'Ex.: período, responsável, status',opt:1}),
+  T('dash_filtros','Filtros necessários',{ph:'Ex.: ano, mês, produto, serviço, status, estado, país, segmento, categoria...',opt:1}),
   {type:'select',id:'dash_estrut',label:'Estrutura visual',options:ESTRUT},
   T('dash_visual','Cores ou identidade visual',{opt:1,ph:'Ex.: azul e laranja, sem muito enfeite'})
  ]},
@@ -925,6 +940,12 @@ function focusTop(){
 function go(n){S.step=Math.max(0,Math.min(STEPS.length-1,n));S.max=Math.max(S.max||0,S.step);S.view='step';save();renderStage();focusTop()}
 
 var toastT=null;
+var tickT;
+function tick(){
+  var el=$('#tick');if(!el)return;
+  el.classList.remove('play');void el.offsetWidth;el.classList.add('play');
+  clearTimeout(tickT);tickT=setTimeout(function(){el.classList.remove('play')},1700);
+}
 function toast(m){var t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove('on')},2400)}
 function copyPrompt(){
   var t=$('#promptOut');var txt=t.value;
@@ -955,7 +976,7 @@ stage.addEventListener('change',function(e){
 document.addEventListener('click',function(e){
   var b=e.target.closest&&e.target.closest('[data-act]');if(!b)return;
   var act=b.dataset.act;
-  if(act==='next')go(S.step+1);
+  if(act==='next'){var done=!stepGaps()[S.step];go(S.step+1);if(done)tick()}
   else if(act==='back')go(S.step-1);
   else if(act==='goto'){var gn=parseInt(b.dataset.s,10)||0;if(gn>=STEPS.length){S.view='result';S.max=STEPS.length-1;save();renderStage();focusTop()}else go(gn)}
   else if(act==='generate'){S.view='result';S.max=STEPS.length-1;save();renderStage();focusTop()}
